@@ -19,6 +19,13 @@ android {
     defaultConfig {
         minSdk = 23
     }
+
+    buildTypes {
+        create("staging") {
+        }
+    }
+
+    namespace = "com.twou.offline"
 }
 
 dependencies {
