@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Mobile Offline Downloader"
-include ':app'
+include ':offlineLibrary'
