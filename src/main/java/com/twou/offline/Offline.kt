@@ -147,15 +147,19 @@ class Offline private constructor(
 
         private var mOfflineManager: OfflineManager? = null
 
+        private var mCreatorUnit:
+                ((queueItem: OfflineQueueItem) -> BaseOfflineDownloaderCreator)? = null
+
         private var mOfflineModeIgnoreUrls: Set<String>? = null
 
         fun init(
             context: Context, builder: Builder? = null,
-            creatorFactory: (queueItem: OfflineQueueItem) -> BaseOfflineDownloaderCreator
+            creatorUnit: (queueItem: OfflineQueueItem) -> BaseOfflineDownloaderCreator
         ) {
             instance = builder?.build(context.applicationContext)
                 ?: Builder().build(context.applicationContext)
-            mOfflineManager = OfflineManager(creatorFactory)
+            mCreatorUnit = creatorUnit
+            mOfflineManager = OfflineManager()
         }
 
         fun getOfflineRepository(): IOfflineRepository {
@@ -176,6 +180,11 @@ class Offline private constructor(
         fun getOfflineManager(): OfflineManager {
             checkInstance()
             return mOfflineManager!!
+        }
+
+        fun getCreatorUnit(): (queueItem: OfflineQueueItem) -> BaseOfflineDownloaderCreator {
+            checkInstance()
+            return mCreatorUnit!!
         }
 
         fun setOfflineModeIgnoreUrls(urls: Set<String>?) {
@@ -222,7 +231,8 @@ class Offline private constructor(
         }
 
         private fun checkInstance() {
-            if (instance == null) throw IllegalStateException("You need to call init() first")
+            if (instance == null || mCreatorUnit == null)
+                throw IllegalStateException("You need to call init() first")
         }
     }
 }

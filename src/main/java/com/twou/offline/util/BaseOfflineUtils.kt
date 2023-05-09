@@ -26,7 +26,7 @@ class BaseOfflineUtils {
         @JvmStatic
         fun getHtmlErrorOverlay(element: Element): String {
             val message =
-                Offline.getContext().getString(R.string.download_content_not_available)
+                Offline.getContext().getString(R.string.offline_download_content_not_available)
 
             return """
                 <div class="offline-error-container">

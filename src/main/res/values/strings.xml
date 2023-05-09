@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="download_content_not_available">This content is not available for offline</string>
+    <string name="offline_download_content_not_available">This content is not available for offline</string>
+    <string name="offline_download_network_should_be_online">Connection must be re-established to continue</string>
+    <string name="offline_download_network_error">The download will continue after an internet connection is established.</string>
+    <string name="offline_download_server_error">Something went wrong on the server side. Try again or contact support.</string>
+    <string name="offline_download_unsupported_error">This content cannot be downloaded because it contains unsupported data.</string>
+    <string name="offline_download_no_space_error">Due to a lack of storage, downloads failed. Please delete files and try again.</string>
+    <string name="offline_download_remove_content">Are you sure you want to remove this item from the local storage?</string>
+
+    <string name="offline_dialog_ok">OK</string>
+    <string name="offline_dialog_retry">Retry</string>
+    <string name="offline_dialog_cancel">Cancel</string>
+    <string name="offline_dialog_remove">Remove</string>
 
 </resources>

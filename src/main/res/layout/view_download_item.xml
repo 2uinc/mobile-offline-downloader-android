@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/downloadContainerLayout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true"
+    android:padding="2dp">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/downloadStatusImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_offline_round_download" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/progressStatusImageView"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/downloadInfinityProgressBar"
+        app:layout_constraintEnd_toEndOf="@+id/downloadInfinityProgressBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_offline_round_play" />
+
+    <ProgressBar
+        android:id="@+id/downloadInfinityProgressBar"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:indeterminate="true"
+        android:visibility="invisible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/downloadProgressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="80"
+        android:progressDrawable="@drawable/bg_offline_progress"
+        android:rotation="-90"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/downloadPercentTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:textColor="@color/offlineColorAccent"
+        android:textSize="7sp"
+        app:layout_constraintEnd_toEndOf="@+id/downloadProgressBar"
+        app:layout_constraintStart_toStartOf="@+id/downloadProgressBar"
+        app:layout_constraintTop_toBottomOf="@+id/downloadProgressBar"
+        tools:ignore="SmallSp"
+        tools:text="99%" />
+</androidx.constraintlayout.widget.ConstraintLayout>

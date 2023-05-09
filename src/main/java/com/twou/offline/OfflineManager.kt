@@ -22,9 +22,7 @@ import java.net.SocketException
 import java.util.*
 import javax.net.ssl.SSLException
 
-class OfflineManager internal constructor(
-    private val mCreatorFactory: (queueItem: OfflineQueueItem) -> BaseOfflineDownloaderCreator
-) : CoroutineScope {
+class OfflineManager internal constructor() : CoroutineScope {
 
     private val mOfflineRepository = Offline.getOfflineRepository()
     private val mOfflineUnsupportedRepository = Offline.getOfflineUnsupportedRepository()
@@ -305,7 +303,7 @@ class OfflineManager internal constructor(
                     it.queueState = QueueState.PREPARING
                 }
 
-                addOfflineDownloaderCreator(mCreatorFactory(it))
+                addOfflineDownloaderCreator(Offline.getCreatorUnit().invoke(it))
             }
         } catch (e: Exception) {
             e.printStackTrace()
