@@ -50,7 +50,10 @@ object OfflineDownloaderUtils {
     }
 
     fun clearHtml(html: String): String {
-        return html.replace("&lt;#root&gt;", "").replace("<#root>", "")
+        return html.replace("&lt;#root&gt;", "")
+            .replace("<#root>", "")
+            .replace("&lt;/#root&gt;", "")
+            .replace("</#root>", "")
     }
 
     fun getUrlWithoutQuery(url: String): String {

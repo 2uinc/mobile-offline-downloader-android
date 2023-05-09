@@ -21,6 +21,7 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
     private var mHtmlListener: HtmlListener? = null
 
     private var mWebView: WebView? = null
+
     private val mSupportedTags = setOf(
         HtmlLink.A, HtmlLink.IMG, HtmlLink.LINK, HtmlLink.SCRIPT, HtmlLink.VIDEO, HtmlLink.TRACK,
         HtmlLink.SOURCE
@@ -28,9 +29,13 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
     private val mSupportedClasses = setOf("offline-video-player")
 
     protected fun initWebView() {
-        mWebView = WebView(Offline.getContext())
+        mWebView = createWebView()
+    }
 
-        val webSettings: WebSettings = mWebView?.settings ?: return
+    open fun createWebView(): WebView {
+        val webView = WebView(Offline.getContext())
+
+        val webSettings: WebSettings = webView.settings
         webSettings.builtInZoomControls = false
         webSettings.loadWithOverviewMode = true
         webSettings.javaScriptEnabled = true
@@ -43,10 +48,17 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
         webSettings.domStorageEnabled = true
         webSettings.allowFileAccessFromFileURLs = true
 
-        mWebView?.setBackgroundColor(Color.TRANSPARENT)
-        mWebView?.webViewClient = object : OfflineDelayWebViewClient(object : OfflineDelayListener {
+        webView.setBackgroundColor(Color.TRANSPARENT)
+
+        addWebViewClient(webView)
+
+        return webView
+    }
+
+    protected fun addWebViewClient(webView: WebView) {
+        webView.webViewClient = object : OfflineDelayWebViewClient(object : OfflineDelayListener {
             override fun onPagePrepared() {
-                handler.post { mWebView?.loadUrl(OfflineConst.PRINT_HTML) }
+                handler.post { webView.loadUrl(OfflineConst.PRINT_HTML) }
             }
         }) {
             override fun onLoadResource(view: WebView?, url: String?) {
@@ -63,7 +75,7 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
             }
         }
 
-        mWebView?.addJavascriptInterface(JavaScriptInterface(), "android")
+        webView.addJavascriptInterface(JavaScriptInterface(), "android")
     }
 
     override fun checkResourceBeforeSave(link: ResourceLink, data: String, threadId: Int): String {

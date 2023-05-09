@@ -53,58 +53,59 @@ class OfflineHtmlVideoChecker : CoroutineScope {
 
             var videoPosition = mVideoLinks.size
 
-            mDocument?.getElementsByTag(BaseHtmlOfflineDownloader.HtmlLink.VIDEO)?.forEach { element ->
-                val src = if (element.hasAttr(BaseHtmlOfflineDownloader.HtmlLink.SRC)) {
-                    element.attr(BaseHtmlOfflineDownloader.HtmlLink.SRC)
-                } else {
-                    val sourceElement = element.getElementsByTag("source")?.first()
-                    if (sourceElement?.hasAttr(BaseHtmlOfflineDownloader.HtmlLink.SRC) == true) {
-                        sourceElement.attr(BaseHtmlOfflineDownloader.HtmlLink.SRC)
-
+            mDocument?.getElementsByTag(BaseHtmlOfflineDownloader.HtmlLink.VIDEO)
+                ?.forEach { element ->
+                    val src = if (element.hasAttr(BaseHtmlOfflineDownloader.HtmlLink.SRC)) {
+                        element.attr(BaseHtmlOfflineDownloader.HtmlLink.SRC)
                     } else {
-                        ""
-                    }
-                }
-                if (src.isNotBlank() && !src.contains("youtube")) {
-                    var subtitleUrl = ""
-                    val fileName =
-                        src.substring(src.lastIndexOf("/") + 1).substringBeforeLast(".")
+                        val sourceElement = element.getElementsByTag("source")?.first()
+                        if (sourceElement?.hasAttr(BaseHtmlOfflineDownloader.HtmlLink.SRC) == true) {
+                            sourceElement.attr(BaseHtmlOfflineDownloader.HtmlLink.SRC)
 
-                    run job@{
-                        mResourceSet?.forEach {
-                            if (it.contains(".vtt") && it.contains(fileName)) {
-                                subtitleUrl = it
-                                return@job
-                            }
+                        } else {
+                            ""
                         }
                     }
+                    if (src.isNotBlank() && !src.contains("youtube")) {
+                        var subtitleUrl = ""
+                        val fileName =
+                            src.substring(src.lastIndexOf("/") + 1).substringBeforeLast(".")
 
-                    val videoDiv = getVideoHtml(videoPosition, src, subtitleUrl)
-                    var workingElement: Element? = null
-                    if (element.hasParent() && element.parent()
-                            .hasClass("fluid-width-video-wrapper")
-                    ) {
-                        workingElement = element.parent()
-
-                    } else {
                         run job@{
-                            element.parents().forEach { parent ->
-                                if (parent.hasClass("video_wrapper")) {
-                                    workingElement = parent
+                            mResourceSet?.forEach {
+                                if (it.contains(".vtt") && it.contains(fileName)) {
+                                    subtitleUrl = it
                                     return@job
                                 }
                             }
                         }
 
-                        if (workingElement == null) workingElement = element
+                        val videoDiv = getVideoHtml(videoPosition, src, subtitleUrl)
+                        var workingElement: Element? = null
+                        if (element.hasParent() && element.parent()
+                                .hasClass("fluid-width-video-wrapper")
+                        ) {
+                            workingElement = element.parent()
+
+                        } else {
+                            run job@{
+                                element.parents().forEach { parent ->
+                                    if (parent.hasClass("video_wrapper")) {
+                                        workingElement = parent
+                                        return@job
+                                    }
+                                }
+                            }
+
+                            if (workingElement == null) workingElement = element
+                        }
+
+                        workingElement?.replaceWith(Jsoup.parse(videoDiv))
+
+                        isNeedAddOfflineVideoScript = true
+                        videoPosition++
                     }
-
-                    workingElement?.replaceWith(Jsoup.parse(videoDiv))
-
-                    isNeedAddOfflineVideoScript = true
-                    videoPosition++
                 }
-            }
 
             if (mVideoLinks.isNotEmpty() || isNeedAddOfflineVideoScript) {
                 mDocument?.head()?.append(OfflineConst.OFFLINE_VIDEO_SCRIPT)
@@ -112,14 +113,31 @@ class OfflineHtmlVideoChecker : CoroutineScope {
             }
 
             mVideoLinks.forEachIndexed { index, videoLink ->
+                val element = videoLink.element
                 val videoDiv = getPreviewVideoHtml(index)
-                var element = videoLink.element
-                element = if (element.hasParent() && element.parent()
+                var workingElement: Element? = null
+                if (element.hasParent() && element.parent()
                         .hasClass("fluid-width-video-wrapper")
-                ) element.parent() else element
+                ) {
+                    workingElement = element.parent()
+
+                } else {
+                    run job@{
+                        element.parents().forEach { parent ->
+                            if (parent.hasClass("video_wrapper") ||
+                                parent.hasClass("wistia_responsive_padding")
+                            ) {
+                                workingElement = parent
+                                return@job
+                            }
+                        }
+                    }
+                }
+
+                if (workingElement == null) workingElement = element
 
                 videoLink.previewElement = Jsoup.parse(videoDiv)
-                element.replaceWith(videoLink.previewElement)
+                workingElement?.replaceWith(videoLink.previewElement)
             }
 
             launch(Dispatchers.Main) {

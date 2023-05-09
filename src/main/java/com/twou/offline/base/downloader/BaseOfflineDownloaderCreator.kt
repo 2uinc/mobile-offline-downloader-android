@@ -1,6 +1,7 @@
 package com.twou.offline.base.downloader
 
 import com.twou.offline.data.IOfflineDownloaderCreator
+import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineQueueItem
 
 abstract class BaseOfflineDownloaderCreator(val offlineQueueItem: OfflineQueueItem) :
@@ -10,9 +11,15 @@ abstract class BaseOfflineDownloaderCreator(val offlineQueueItem: OfflineQueueIt
     private var mCurrentProgress = -1
     private var mAllProgress = -1
 
+    override fun getKeyOfflineItem(): KeyOfflineItem {
+        return offlineQueueItem.keyItem
+    }
+
     override fun prepareOfflineDownloader(unit: (error: Throwable?) -> Unit) {
         mError = null
     }
+
+    override fun isPrepared(): Boolean = true
 
     override fun setError(error: Throwable?) {
         mError = error
