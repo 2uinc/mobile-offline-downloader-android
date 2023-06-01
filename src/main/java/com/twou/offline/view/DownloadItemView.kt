@@ -92,12 +92,13 @@ class DownloadItemView : FrameLayout {
 
         mOfflineManager.addListener(mDownloadListener)
         Offline.addNetworkListener(mOfflineNetworkChangedListener)
+
+        checkCurrentItemDownloadState()
     }
 
     override fun onDetachedFromWindow() {
         mOfflineManager.removeListener(mDownloadListener)
         Offline.removeNetworkListener(mOfflineNetworkChangedListener)
-        mDialog?.dismiss()
         super.onDetachedFromWindow()
     }
 
@@ -179,6 +180,8 @@ class DownloadItemView : FrameLayout {
     }
 
     private fun checkCurrentItemDownloadState() {
+        if (mCurrentKeyItem == null) return
+
         when {
             mOfflineUnsupportedRepository.isUnsupported(mCurrentKeyItem?.key ?: "") -> {
                 setState(STATE_UNSUPPORTED_ERROR)

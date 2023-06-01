@@ -5,7 +5,6 @@
     android:id="@+id/downloadContainerLayout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:animateLayoutChanges="true"
     android:padding="2dp">
 
     <androidx.appcompat.widget.AppCompatImageView

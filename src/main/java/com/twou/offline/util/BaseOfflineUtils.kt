@@ -102,7 +102,6 @@ class BaseOfflineUtils {
                 display: flex;
                 justify-content: center;
                 text-align: center;
-                width: 100%;
                 border-radius: 10px;
                 border: 2px solid #e5146fff;
                 margin-top: 20px;
