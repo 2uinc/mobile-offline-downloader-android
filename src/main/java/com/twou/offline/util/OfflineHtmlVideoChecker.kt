@@ -1,5 +1,6 @@
 package com.twou.offline.util
 
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import com.google.gson.Gson
@@ -44,6 +45,30 @@ class OfflineHtmlVideoChecker : CoroutineScope {
             }
         }
 
+        document.getElementsByTag("script")?.forEach { element ->
+            if (getVideoType(element) == VideoType.WISTIA) {
+                val link = element.attr("src")
+                if (link.endsWith(".jsonp")) {
+                    if (mVideoLinks.find { link.contains(it.element.attr("src")) } != null) {
+                        return@forEach
+                    }
+
+                    Uri.parse(link).lastPathSegment?.substringBefore(".jsonp")?.let { id ->
+                        document.getElementsByTag("span").forEach { spanElement ->
+                            if (spanElement.attr("class").contains(id)) {
+                                spanElement.attr("src", link.substringBefore(".jsonp"))
+                                mVideoLinks.add(VideoLink(VideoType.WISTIA, spanElement))
+                                return@let
+                            }
+                        }
+                    }
+
+                } else if (link.contains("e-v1.js", ignoreCase = true)) {
+                    element.remove()
+                }
+            }
+        }
+
         replaceAllFoundedVideosWithPreviewDiv()
     }
 
@@ -66,7 +91,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                             ""
                         }
                     }
-                    if (src.isNotBlank() && !src.contains("youtube")) {
+                    if (src.isNotBlank() && !src.contains("youtube") && !src.startsWith("blob:")) {
                         var subtitleUrl = ""
                         val fileName =
                             src.substring(src.lastIndexOf("/") + 1).substringBeforeLast(".")
@@ -80,7 +105,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                             }
                         }
 
-                        val videoDiv = getVideoHtml(videoPosition, src, subtitleUrl)
+                        val videoDiv = getVideoHtml("$videoPosition", src, subtitleUrl)
                         var workingElement: Element? = null
                         if (element.hasParent() && element.parent()
                                 .hasClass("fluid-width-video-wrapper")
@@ -90,7 +115,9 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                         } else {
                             run job@{
                                 element.parents().forEach { parent ->
-                                    if (parent.hasClass("video_wrapper")) {
+                                    if (parent.hasClass("video_wrapper") ||
+                                        parent.hasClass("wistia_responsive_padding")
+                                    ) {
                                         workingElement = parent
                                         return@job
                                     }
@@ -247,17 +274,21 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         val widgetItem = Gson().fromJson(content, VideoWidgetItem::class.java)
 
         val videos = StringBuilder()
+        var position = 0
 
         widgetItem.widgetData.options.forEach { option ->
             val videoUrl = option.imgDetails.mediaPath
 
             OfflineLogs.d(TAG, "    Frost: video url is: $videoUrl")
 
-            val videoDiv = getVideoHtml(mCurrentLinkPosition, videoUrl)
+            val videoDiv = getVideoHtml("${mCurrentLinkPosition}_${position}", videoUrl)
             videos.append(videoDiv)
+
+            position++
         }
 
-        videoLink.element.replaceWith(Jsoup.parse(videos.toString()))
+        getCurrentVideoLink().previewElement?.replaceWith(Jsoup.parse(videos.toString()))
+        getCurrentVideoLink().videoHtml = videos.toString()
 
         mHandler.post {
             mCurrentLinkPosition++
@@ -377,7 +408,10 @@ class OfflineHtmlVideoChecker : CoroutineScope {
             } catch (e: Exception) {
                 e.printStackTrace()
 
-                Gson().fromJson(data.substringBeforeLast("}}") + "}}", VimeoItem::class.java)
+                Gson().fromJson(
+                    data.substringBefore("</script>").substringBeforeLast("}}") + "}}",
+                    VimeoItem::class.java
+                )
             }
 
             vimeoItem?.let {
@@ -406,7 +440,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
     }
 
     private fun replaceVideoElement(url: String, subtitleUrl: String = "") {
-        val videoDiv = getVideoHtml(mCurrentLinkPosition, url, subtitleUrl)
+        val videoDiv = getVideoHtml("$mCurrentLinkPosition", url, subtitleUrl)
         val videoElement = Jsoup.parse(videoDiv)
 
         getCurrentVideoLink().previewElement?.replaceWith(videoElement)
@@ -427,7 +461,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         """.trimIndent()
     }
 
-    private fun getVideoHtml(id: Int, url: String, subtitleUrl: String = ""): String {
+    private fun getVideoHtml(id: String, url: String, subtitleUrl: String = ""): String {
         return """
             <div class='offline-video-player' id='video_$id' src='$url' subtitle_url='$subtitleUrl'></div>
         """.trimIndent()

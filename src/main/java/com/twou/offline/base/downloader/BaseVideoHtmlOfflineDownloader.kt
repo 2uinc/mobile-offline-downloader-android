@@ -13,7 +13,7 @@ abstract class BaseVideoHtmlOfflineDownloader(keyItem: KeyOfflineItem) :
 
     protected fun getAllVideosAndDownload(
         document: Document, l: OfflineHtmlVideoChecker.OnVideoProcessListener,
-        contentUrl: String = ""
+        contentUrl: String = "", isNeedReplaceIframes: Boolean = true
     ) {
         OfflineHtmlVideoChecker().apply {
             setResourceSet(resourceSet)
@@ -28,7 +28,14 @@ abstract class BaseVideoHtmlOfflineDownloader(keyItem: KeyOfflineItem) :
                 override fun onVideoLoaded(videoLinks: List<OfflineHtmlVideoChecker.VideoLink>) {
                     if (isDestroyed.get()) return
 
-                    replaceUnusedIframesWithPlaceholder(document, videoLinks, l, contentUrl)
+                    if (isNeedReplaceIframes) {
+                        replaceUnusedIframesWithPlaceholder(document, videoLinks, l, contentUrl)
+
+                    } else {
+                        launch(Dispatchers.Main) {
+                            l.onVideoLoaded(videoLinks)
+                        }
+                    }
                 }
 
                 override fun onError(e: Exception) {
