@@ -3,6 +3,7 @@ package com.twou.offline.view
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
+import android.content.res.ColorStateList
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -117,6 +118,14 @@ class DownloadItemView : FrameLayout {
 
     fun setWithRemoveAbility() {
         isWithRemoveAbility = true
+    }
+
+    fun setViewColor(color: Int) {
+        binding.downloadStatusImageView.setColorFilter(color)
+        binding.progressStatusImageView.setColorFilter(color)
+        binding.downloadInfinityProgressBar.indeterminateTintList = ColorStateList.valueOf(color)
+        binding.downloadProgressBar.progressTintList = ColorStateList.valueOf(color)
+        binding.downloadPercentTextView.setTextColor(color)
     }
 
     private fun init() {

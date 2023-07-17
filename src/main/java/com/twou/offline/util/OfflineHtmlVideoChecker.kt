@@ -193,6 +193,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                     VideoType.FROST -> processFrostVideo(videoLink)
                     VideoType.WISTIA -> processWistiaVideo(videoLink)
                     VideoType.VIMEO -> processVimeoVideo(videoLink)
+                    VideoType.OBJECTS_IFRAME -> processObjectIframeVideo(videoLink)
                 }
 
             } catch (e: Exception) {
@@ -222,6 +223,8 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         if (link.contains("wistia.")) return VideoType.WISTIA
 
         if (link.contains("player.vimeo.com/video")) return VideoType.VIMEO
+
+        if (link.contains("media_objects_iframe")) return VideoType.OBJECTS_IFRAME
         return null
     }
 
@@ -439,6 +442,31 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         }
     }
 
+    private fun processObjectIframeVideo(videoLink: VideoLink) {
+        val link = videoLink.element.attr("src")
+
+        val html = mBaseDownloader.downloadFileContent(
+            link, mapOf("Referer" to Offline.getBaseUrl())
+        )
+
+        val firstSub = html.substringAfter("ENV = {")
+        val data = "{" + firstSub.substringBefore("};") + "}"
+
+        val iframeItem = Gson().fromJson(data, ObjectsIframeItem::class.java)
+        if (iframeItem.mediaObject.mediaType.contains("video")) {
+            iframeItem.mediaObject.mediaSources.minByOrNull { it.size.toLong() }?.url?.let { url ->
+                OfflineLogs.d(TAG, "    Object Iframe: video url is: $url")
+
+                replaceVideoElement(url)
+            }
+        }
+
+        mHandler.post {
+            mCurrentLinkPosition++
+            processVideoLinks()
+        }
+    }
+
     private fun replaceVideoElement(url: String, subtitleUrl: String = "") {
         val videoDiv = getVideoHtml("$mCurrentLinkPosition", url, subtitleUrl)
         val videoElement = Jsoup.parse(videoDiv)
@@ -487,7 +515,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         getCurrentVideoLink().videoHtml = errorDiv
     }
 
-    enum class VideoType { HAP_YAK, FROST, WISTIA, VIMEO }
+    enum class VideoType { HAP_YAK, FROST, WISTIA, VIMEO, OBJECTS_IFRAME }
 
     open class VideoLink(
         val type: VideoType, var element: Element, var previewElement: Element? = null,
@@ -541,6 +569,18 @@ class OfflineHtmlVideoChecker : CoroutineScope {
     )
 
     data class VimeoTextTrackItem(val url: String)
+
+    // Objects Iframe data
+    data class ObjectsIframeItem(@SerializedName("media_object") val mediaObject: MediaObjectItem)
+
+    data class MediaObjectItem(
+        @SerializedName("media_type") val mediaType: String,
+        @SerializedName("media_sources") val mediaSources: List<MediaSource>
+    )
+
+    data class MediaSource(
+        val size: String, val url: String, @SerializedName("content_type") val contentType: String
+    )
 
     open class OnVideoProcessListener {
         open fun onVideoLinksReplaced() {}
