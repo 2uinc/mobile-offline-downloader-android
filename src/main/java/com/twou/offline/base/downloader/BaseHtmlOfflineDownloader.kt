@@ -156,8 +156,17 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
                                     if (it.isNotEmpty()) extension = it
                                 }
                             }
-                            val mimeType =
+                            var mimeType =
                                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+
+                            if (mimeType.isNullOrEmpty() && element.hasAttr("title")) {
+                                val fileName =
+                                    OfflineDownloaderUtils.getUrlFileName(element.attr("title"))
+                                extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
+                                mimeType =
+                                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+                            }
+
                             if (BaseOfflineUtils.isMimeTypeSupported(mimeType)) isNeedAddLink = true
                         } catch (e: Exception) {
                             e.printStackTrace()
