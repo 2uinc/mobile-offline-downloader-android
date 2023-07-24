@@ -8,6 +8,11 @@
     <string name="offline_download_unsupported_error">This content cannot be downloaded because it contains unsupported data.</string>
     <string name="offline_download_no_space_error">Due to a lack of storage, downloads failed. Please delete files and try again.</string>
     <string name="offline_download_remove_content">Are you sure you want to remove this item from the local storage?</string>
+    <string name="offline_download_state_paused">Download Paused</string>
+    <string name="offline_download_queue_no_internet">No Internet Connection</string>
+    <string name="offline_download_queue_title">Download Queue</string>
+    <string name="offline_download_pause_all">PAUSE ALL</string>
+    <string name="offline_download_resume_all">RESUME ALL</string>
 
     <string name="offline_dialog_ok">OK</string>
     <string name="offline_dialog_retry">Retry</string>

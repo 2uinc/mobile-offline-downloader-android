@@ -9,7 +9,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Handler
 import android.os.Looper
-import com.twou.offline.base.downloader.BaseOfflineDownloaderCreator
+import com.twou.offline.base.BaseOfflineDownloaderCreator
 import com.twou.offline.base.repository.BaseOfflineRepository
 import com.twou.offline.base.repository.BaseOfflineUnsupportedRepository
 import com.twou.offline.data.IOfflineLoggerInterceptor
@@ -17,7 +17,7 @@ import com.twou.offline.data.IOfflineRepository
 import com.twou.offline.data.IOfflineUnsupportedRepository
 import com.twou.offline.item.OfflineQueueItem
 import com.twou.offline.util.BaseOfflineUtils
-import com.twou.offline.util.OfflineNetworkChangedListener
+import com.twou.offline.data.IOfflineNetworkChangedListener
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -30,7 +30,7 @@ class Offline private constructor(
 
     internal var isConnected = false
 
-    private val mNetworkChangedSet = mutableSetOf<OfflineNetworkChangedListener>()
+    private val mNetworkChangedSet = mutableSetOf<IOfflineNetworkChangedListener>()
     private val mNetworkHandler = Handler(Looper.getMainLooper())
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -61,13 +61,13 @@ class Offline private constructor(
         connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
     }
 
-    fun addNetworkListener(l: OfflineNetworkChangedListener) {
+    fun addNetworkListener(l: IOfflineNetworkChangedListener) {
         mNetworkChangedSet.add(l)
 
         l.onChanged(isConnected)
     }
 
-    fun removeNetworkListener(l: OfflineNetworkChangedListener) {
+    fun removeNetworkListener(l: IOfflineNetworkChangedListener) {
         mNetworkChangedSet.remove(l)
     }
 
@@ -215,12 +215,12 @@ class Offline private constructor(
             return instance?.mContext!!
         }
 
-        internal fun addNetworkListener(l: OfflineNetworkChangedListener) {
+        internal fun addNetworkListener(l: IOfflineNetworkChangedListener) {
             checkInstance()
             instance?.addNetworkListener(l)
         }
 
-        internal fun removeNetworkListener(l: OfflineNetworkChangedListener) {
+        internal fun removeNetworkListener(l: IOfflineNetworkChangedListener) {
             checkInstance()
             instance?.removeNetworkListener(l)
         }

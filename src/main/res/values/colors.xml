@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="offlineColorAccent">#546573</color>
+    <color name="offlineColorDestroy">#CDFF0022</color>
+    <color name="offlineColorDownloadPanel">#DFE6EE</color>
+    <color name="offlineColorDivider">#DFE6EE</color>
+    <color name="offlineColorOnSurface">#000000</color>
 </resources>

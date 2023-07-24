@@ -10,12 +10,12 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.twou.offline.*
-import com.twou.offline.base.downloader.BaseOfflineDownloaderCreator
+import com.twou.offline.base.BaseOfflineDownloaderCreator
 import com.twou.offline.databinding.ViewDownloadItemBinding
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineQueueItem
 import com.twou.offline.item.QueueState
-import com.twou.offline.util.OfflineNetworkChangedListener
+import com.twou.offline.data.IOfflineNetworkChangedListener
 
 class DownloadItemView : FrameLayout {
 
@@ -68,7 +68,7 @@ class DownloadItemView : FrameLayout {
         }
     }
 
-    private val mOfflineNetworkChangedListener = object : OfflineNetworkChangedListener {
+    private val mOfflineNetworkChangedListener = object : IOfflineNetworkChangedListener {
         override fun onChanged(isConnected: Boolean) {
             isNetworkConnected = isConnected
             checkCurrentItemDownloadState()

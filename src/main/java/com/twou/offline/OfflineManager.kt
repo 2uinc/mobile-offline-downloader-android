@@ -1,7 +1,7 @@
 package com.twou.offline
 
 import com.twou.offline.base.downloader.BaseOfflineDownloader
-import com.twou.offline.base.downloader.BaseOfflineDownloaderCreator
+import com.twou.offline.base.BaseOfflineDownloaderCreator
 import com.twou.offline.data.IOfflineDownloaderCreator
 import com.twou.offline.error.OfflineNoSpaceException
 import com.twou.offline.error.OfflineUnsupportedException
@@ -11,7 +11,7 @@ import com.twou.offline.item.QueueState
 import com.twou.offline.util.BaseOfflineUtils
 import com.twou.offline.util.OfflineDownloaderUtils
 import com.twou.offline.util.OfflineLoggerType
-import com.twou.offline.util.OfflineNetworkChangedListener
+import com.twou.offline.data.IOfflineNetworkChangedListener
 import io.paperdb.Paper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +37,7 @@ class OfflineManager internal constructor() : CoroutineScope {
     override val coroutineContext = Dispatchers.Main
 
     init {
-        Offline.addNetworkListener(object : OfflineNetworkChangedListener {
+        Offline.addNetworkListener(object : IOfflineNetworkChangedListener {
             override fun onChanged(isConnected: Boolean) {
                 if (isConnected) {
                     resumeAll(QueueState.NETWORK_ERROR)

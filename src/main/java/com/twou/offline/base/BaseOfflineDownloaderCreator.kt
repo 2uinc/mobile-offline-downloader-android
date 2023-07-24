@@ -1,4 +1,4 @@
-package com.twou.offline.base.downloader
+package com.twou.offline.base
 
 import com.twou.offline.data.IOfflineDownloaderCreator
 import com.twou.offline.item.KeyOfflineItem
