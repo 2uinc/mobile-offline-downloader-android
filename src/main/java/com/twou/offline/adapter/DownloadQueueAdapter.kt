@@ -9,7 +9,8 @@ import com.twou.offline.OfflineManager
 import com.twou.offline.databinding.ItemDownloadQueueBinding
 import com.twou.offline.item.OfflineQueueItem
 
-class DownloadQueueAdapter : RecyclerView.Adapter<DownloadQueueAdapter.ViewHolder>() {
+class DownloadQueueAdapter(private val mOnDownloadQueueListener: OnDownloadQueueListener) :
+    RecyclerView.Adapter<DownloadQueueAdapter.ViewHolder>() {
 
     private val mItems = mutableListOf<OfflineQueueItem>()
 
@@ -26,6 +27,8 @@ class DownloadQueueAdapter : RecyclerView.Adapter<DownloadQueueAdapter.ViewHolde
                     }
                 }
             }
+
+            if (itemCount == 0) mOnDownloadQueueListener.onItemsEmpty()
         }
     }
 
@@ -62,4 +65,9 @@ class DownloadQueueAdapter : RecyclerView.Adapter<DownloadQueueAdapter.ViewHolde
     }
 
     class ViewHolder(val binding: ItemDownloadQueueBinding) : RecyclerView.ViewHolder(binding.root)
+
+    interface OnDownloadQueueListener {
+
+        fun onItemsEmpty()
+    }
 }

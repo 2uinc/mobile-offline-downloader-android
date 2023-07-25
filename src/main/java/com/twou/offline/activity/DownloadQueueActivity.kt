@@ -3,7 +3,6 @@ package com.twou.offline.activity
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
@@ -48,7 +47,12 @@ class DownloadQueueActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        mDownloadQueueAdapter = DownloadQueueAdapter()
+        mDownloadQueueAdapter =
+            DownloadQueueAdapter(object : DownloadQueueAdapter.OnDownloadQueueListener {
+                override fun onItemsEmpty() {
+                    finish()
+                }
+            })
         binding.recyclerView.adapter = mDownloadQueueAdapter
 
         binding.resumePauseTextView.setOnClickListener {
@@ -85,7 +89,8 @@ class DownloadQueueActivity : AppCompatActivity() {
         when (mCurrentOfflineState) {
             OfflineManager.STATE_DOWNLOADING -> {
                 binding.resumePauseTextView.setText(R.string.offline_download_pause_all)
-                binding.resumePauseTextView.isVisible = isNetworkConnected
+                binding.resumePauseTextView.visibility =
+                    if (isNetworkConnected) View.VISIBLE else View.GONE
             }
             OfflineManager.STATE_PAUSED -> {
                 binding.resumePauseTextView.setText(R.string.offline_download_resume_all)
