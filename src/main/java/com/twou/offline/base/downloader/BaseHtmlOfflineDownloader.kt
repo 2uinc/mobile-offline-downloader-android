@@ -11,12 +11,14 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import java.io.File
 import java.nio.charset.Charset
+import java.util.*
 
 @SuppressLint("SetJavaScriptEnabled")
 @Suppress("DEPRECATION")
 abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineDownloader(keyItem) {
 
-    protected val resourceSet = mutableSetOf<String>()
+    protected val resourceSet: MutableSet<String> =
+        Collections.synchronizedSet(mutableSetOf<String>())
 
     private var mHtmlListener: HtmlListener? = null
 
