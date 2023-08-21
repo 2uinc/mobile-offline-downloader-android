@@ -83,7 +83,7 @@ abstract class BaseVideoHtmlOfflineDownloader(keyItem: KeyOfflineItem) :
             document.getElementsByTag("iframe")?.forEach { element ->
                 isNeedAddScripts = true
                 val replaceElement =
-                    BaseOfflineUtils.getParentElement("fluid-width-video-wrapper", element)
+                    BaseOfflineUtils.getParentElementByClass("fluid-width-video-wrapper", element)
                         ?: element
                 replaceElement.replaceWith(Jsoup.parse(BaseOfflineUtils.getHtmlErrorOverlay(element)))
                 val srcUrl = element.attr("src") ?: ""

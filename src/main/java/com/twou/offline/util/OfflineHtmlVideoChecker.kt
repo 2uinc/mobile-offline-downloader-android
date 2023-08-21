@@ -112,6 +112,13 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                         ) {
                             workingElement = element.parent()
 
+                        } else if (element.hasParent() && element.parent()
+                                .hasAttr("data-vjs-player")
+                        ) {
+                            BaseOfflineUtils.getParentElementById("app", element.parent())?.let {
+                                workingElement = it
+                            }
+
                         } else {
                             run job@{
                                 element.parents().forEach { parent ->

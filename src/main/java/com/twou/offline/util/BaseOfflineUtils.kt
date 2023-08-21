@@ -156,13 +156,24 @@ class BaseOfflineUtils {
         }
 
         @JvmStatic
-        fun getParentElement(className: String, element: Element?): Element? {
+        fun getParentElementByClass(className: String, element: Element?): Element? {
             val parentElement = element?.parent() ?: return null
             return if (parentElement.hasClass(className)) {
                 parentElement
 
             } else {
-                getParentElement(className, parentElement)
+                getParentElementByClass(className, parentElement)
+            }
+        }
+
+        @JvmStatic
+        fun getParentElementById(id: String, element: Element?): Element? {
+            val parentElement = element?.parent() ?: return null
+            return if (parentElement.id() == id) {
+                parentElement
+
+            } else {
+                getParentElementById(id, parentElement)
             }
         }
 
