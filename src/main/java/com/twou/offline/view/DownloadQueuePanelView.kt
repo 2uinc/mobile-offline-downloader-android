@@ -136,12 +136,16 @@ class DownloadQueuePanelView @JvmOverloads constructor(
 
         if (isConnected) {
             binding.queuePanelTextView.visibility = View.VISIBLE
+            binding.downloadQueuePanelLeftContainerLayout.visibility =
+                if (isDownloadInProgress && mOfflineManager.getCurrentState() != OfflineManager.STATE_PAUSED)
+                    View.VISIBLE else View.GONE
             binding.noInternetQueuePanelTextView.visibility = View.GONE
             binding.downloadQueuePanelLayout.visibility =
                 if (isDownloadInProgress) View.VISIBLE else View.GONE
 
         } else {
             binding.queuePanelTextView.visibility = View.GONE
+            binding.downloadQueuePanelLeftContainerLayout.visibility = View.GONE
             binding.noInternetQueuePanelTextView.visibility = View.VISIBLE
             binding.downloadQueuePanelLayout.visibility = View.VISIBLE
         }

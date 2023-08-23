@@ -316,6 +316,7 @@ class DownloadItemView : FrameLayout {
         }
 
     private fun showErrorDialog(message: String) {
+        mDialog?.dismiss()
         mDialog = AlertDialog.Builder(context)
             .setPositiveButton(R.string.offline_dialog_ok) { _, _ -> }
             .setMessage(message)
@@ -323,6 +324,7 @@ class DownloadItemView : FrameLayout {
     }
 
     private fun showErrorDialogWithRetry(message: String) {
+        mDialog?.dismiss()
         mDialog = AlertDialog.Builder(context)
             .setPositiveButton(R.string.offline_dialog_retry) { _, _ ->
                 mOfflineManager.resume(mCurrentKeyItem?.key ?: "")
@@ -333,6 +335,7 @@ class DownloadItemView : FrameLayout {
     }
 
     private fun showRemoveDialog() {
+        mDialog?.dismiss()
         mDialog = AlertDialog.Builder(context)
             .setPositiveButton(R.string.offline_dialog_remove) { _, _ ->
                 mOfflineManager.remove(mCurrentKeyItem?.key ?: "")

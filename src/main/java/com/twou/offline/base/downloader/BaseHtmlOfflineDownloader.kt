@@ -145,6 +145,8 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
         mSupportedTags.forEach { tag ->
             document.getElementsByTag(tag).forEach { element ->
                 var isNeedAddLink = true
+                var fileName = ""
+
                 if (tag == HtmlLink.A) {
                     isNeedAddLink = false
 
@@ -161,9 +163,10 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
                             var mimeType =
                                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
 
-                            if (mimeType.isNullOrEmpty() && element.hasAttr("title")) {
-                                val fileName =
-                                    OfflineDownloaderUtils.getUrlFileName(element.attr("title"))
+                            if (mimeType.isNullOrEmpty()) {
+                                val fileUrl =
+                                    if (element.hasAttr("title")) element.attr("title") else element.text()
+                                fileName = OfflineDownloaderUtils.getUrlFileName(fileUrl)
                                 extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
                                 mimeType =
                                     MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
@@ -177,14 +180,21 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
                 }
 
                 if (isNeedAddLink) {
-                    links.addAll(createHtmlLinksFrom(element, folderName, baseUrl))
+                    links.addAll(
+                        createHtmlLinksFrom(
+                            element, fileName = fileName, folderName = folderName,
+                            baseUrl = baseUrl
+                        )
+                    )
                 }
             }
         }
 
         mSupportedClasses.forEach { clazz ->
             document.getElementsByClass(clazz).forEach { element ->
-                links.addAll(createHtmlLinksFrom(element, folderName, baseUrl))
+                links.addAll(
+                    createHtmlLinksFrom(element, folderName = folderName, baseUrl = baseUrl)
+                )
             }
         }
 
@@ -192,8 +202,8 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
     }
 
     protected fun createHtmlLinkFrom(
-        linkUrl: String, attr: String, folderName: String = "", oldLink: String = "",
-        extension: String = "", baseUrl: String = ""
+        linkUrl: String, attr: String, fileName: String = "", folderName: String = "",
+        oldLink: String = "", extension: String = "", baseUrl: String = ""
     ): HtmlLink? {
         var oldUrl = oldLink
         var url = linkUrl.trim()
@@ -219,13 +229,13 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
             }
         }
 
-        var fileName = OfflineDownloaderUtils.getUrlFileName(url)
-        if (extension.isNotEmpty() && !fileName.endsWith(extension)) fileName += extension
+        var name = fileName.ifEmpty { OfflineDownloaderUtils.getUrlFileName(url) }
+        if (extension.isNotEmpty() && !name.endsWith(extension)) name += extension
 
         val folder = if (folderName.isBlank()) "" else "$folderName/"
         val dirPath = "$filesDirPath/$folder"
 
-        return HtmlLink(ResourceLink(url, dirPath, fileName, oldUrl), attr)
+        return HtmlLink(ResourceLink(url, dirPath, name, oldUrl), attr)
     }
 
     protected fun clear() {
@@ -267,7 +277,7 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
     }
 
     private fun createHtmlLinksFrom(
-        element: Element, folderName: String = "", baseUrl: String = ""
+        element: Element, fileName: String = "", folderName: String = "", baseUrl: String = ""
     ): List<HtmlLink> {
         val links = mutableListOf<HtmlLink>()
 
@@ -278,8 +288,8 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
             }
 
             createHtmlLinkFrom(
-                element.attr(HtmlLink.HREF), HtmlLink.HREF, folderName, extension = extension,
-                baseUrl = baseUrl
+                element.attr(HtmlLink.HREF), HtmlLink.HREF, fileName = fileName,
+                folderName = folderName, extension = extension, baseUrl = baseUrl
             )?.let { htmlLink ->
                 if (extension.isNotEmpty()) htmlLink.resourceLink.isNeedCheckBeforeSave = true
                 links.add(htmlLink)
@@ -288,7 +298,8 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
 
         if (element.hasAttr(HtmlLink.SRC)) {
             createHtmlLinkFrom(
-                element.attr(HtmlLink.SRC), HtmlLink.SRC, folderName, baseUrl = baseUrl
+                element.attr(HtmlLink.SRC), HtmlLink.SRC, fileName = fileName,
+                folderName = folderName, baseUrl = baseUrl
             )?.let { htmlLink ->
                 links.add(htmlLink)
             }
@@ -296,8 +307,8 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
 
         if (element.hasAttr(HtmlLink.SUBTITLE_URL)) {
             createHtmlLinkFrom(
-                element.attr(HtmlLink.SUBTITLE_URL), HtmlLink.SUBTITLE_URL, folderName,
-                baseUrl = baseUrl
+                element.attr(HtmlLink.SUBTITLE_URL), HtmlLink.SUBTITLE_URL, fileName = fileName,
+                folderName = folderName, baseUrl = baseUrl
             )?.let { htmlLink ->
                 links.add(htmlLink)
             }
@@ -305,7 +316,8 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
 
         if (element.hasAttr(HtmlLink.POSTER)) {
             createHtmlLinkFrom(
-                element.attr(HtmlLink.POSTER), HtmlLink.POSTER, folderName, baseUrl = baseUrl
+                element.attr(HtmlLink.POSTER), HtmlLink.POSTER, fileName = fileName,
+                folderName = folderName, baseUrl = baseUrl
             )?.let { htmlLink ->
                 links.add(htmlLink)
             }

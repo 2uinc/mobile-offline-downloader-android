@@ -119,6 +119,15 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                                 workingElement = it
                             }
 
+                        } else if (element.hasParent() && element.parent().hasAttr("aria-label")
+                            && element.parent().attr("aria-label") == "Video Player"
+                        ) {
+                            BaseOfflineUtils.getParentElementById("oyster", element.parent())?.let {
+                                workingElement = it
+                            }
+
+                            if (workingElement == null) workingElement = element
+
                         } else {
                             run job@{
                                 element.parents().forEach { parent ->
