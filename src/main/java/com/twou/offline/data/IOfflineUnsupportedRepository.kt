@@ -6,4 +6,6 @@ interface IOfflineUnsupportedRepository {
 
     fun setUnsupported(key: String)
 
+    fun removeAll()
+
 }

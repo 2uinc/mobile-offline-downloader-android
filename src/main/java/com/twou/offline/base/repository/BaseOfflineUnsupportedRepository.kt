@@ -23,6 +23,14 @@ class BaseOfflineUnsupportedRepository : IOfflineUnsupportedRepository {
         saveKeys()
     }
 
+    override fun removeAll() {
+        if (!isLoaded) loadKeys()
+
+        mOfflineUnsupportedSet.clear()
+
+        saveKeys()
+    }
+
     private fun loadKeys() {
         try {
             Paper.book().read<Set<String>>("offline_unsupported_module_keys")?.let {

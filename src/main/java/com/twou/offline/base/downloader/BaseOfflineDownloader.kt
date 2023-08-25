@@ -1,8 +1,10 @@
 package com.twou.offline.base.downloader
 
+import android.animation.ValueAnimator
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.view.animation.LinearInterpolator
 import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
 import com.twou.offline.Offline
@@ -17,6 +19,7 @@ import com.twou.offline.util.OfflineLogs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Request
 import java.io.BufferedInputStream
@@ -41,6 +44,15 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     private val mOfflineLoggerInterceptor = Offline.getOfflineLoggerInterceptor()
 
+    private var mProgressAnimator: ValueAnimator? = null
+    private var mCurrentProgress = 0f
+    private var mAnimatorUpdateListener = ValueAnimator.AnimatorUpdateListener {
+        val value = (it.animatedValue as? Float) ?: return@AnimatorUpdateListener
+        mCurrentProgress = value
+
+        mOnDownloadListener?.onProgressChanged(mCurrentProgress.toInt(), 100000)
+    }
+
     override val coroutineContext = Dispatchers.IO
 
     protected abstract fun startPreparation()
@@ -50,11 +62,13 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     fun prepare(l: OnDownloadListener) {
         mOnDownloadListener = l
+        mCurrentProgress = 0f
 
         File(filesDirPath).apply {
             if (!exists()) mkdirs()
         }
 
+        updateProgress(40000, 100000, 40000)
         startPreparation()
     }
 
@@ -107,10 +121,12 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
             if (isDestroyed.get()) return@CyclicBarrier
 
             OfflineLogs.d(TAG, "Downloading finished")
-            handler.post {
+            launch(Dispatchers.Main) {
                 progressStatus(allFilesSize, allFilesSize)
+                launch(Dispatchers.Default) {
+                    onFinished()
+                }
             }
-            onFinished()
         }
 
         for (i in 0 until MAX_THREAD_COUNT) {
@@ -250,12 +266,41 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         }
     }
 
-    protected fun updateProgress(currentProgress: Int, allProgress: Int) {
-        mOnDownloadListener?.onProgressChanged(currentProgress, allProgress)
+    protected fun updateProgress(
+        currentProgress: Int, allProgress: Int, animDuration: Long = 1500L
+    ) {
+        val next = currentProgress.toFloat() * 100 / allProgress
+        val nextValue = next * 1000f
+
+        if (nextValue < mCurrentProgress) return
+
+        if (mProgressAnimator == null) {
+            mProgressAnimator = ValueAnimator.ofFloat(mCurrentProgress, nextValue).apply {
+                interpolator = LinearInterpolator()
+                duration = animDuration
+
+                addUpdateListener(mAnimatorUpdateListener)
+                start()
+            }
+
+        } else {
+            mProgressAnimator?.removeUpdateListener(mAnimatorUpdateListener)
+            mProgressAnimator?.end()
+            mProgressAnimator?.setFloatValues(mCurrentProgress, nextValue)
+            mProgressAnimator?.duration = animDuration
+            mProgressAnimator?.addUpdateListener(mAnimatorUpdateListener)
+            mProgressAnimator?.start()
+        }
     }
 
     protected fun setAllDataDownloaded(offlineModule: OfflineModule) {
-        mOnDownloadListener?.onDownloaded(offlineModule)
+        launch(Dispatchers.Main) {
+            mProgressAnimator?.removeAllUpdateListeners()
+            mProgressAnimator?.cancel()
+            launch(Dispatchers.Default) {
+                mOnDownloadListener?.onDownloaded(offlineModule)
+            }
+        }
     }
 
     @Throws(Exception::class)
