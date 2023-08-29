@@ -11,11 +11,11 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import com.twou.offline.*
 import com.twou.offline.base.BaseOfflineDownloaderCreator
+import com.twou.offline.data.IOfflineNetworkChangedListener
 import com.twou.offline.databinding.ViewDownloadItemBinding
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineQueueItem
 import com.twou.offline.item.QueueState
-import com.twou.offline.data.IOfflineNetworkChangedListener
 
 class DownloadItemView : FrameLayout {
 
@@ -65,6 +65,10 @@ class DownloadItemView : FrameLayout {
 
         override fun onItemPaused(key: String) {
             if (key == mCurrentKeyItem?.key) setState(STATE_PAUSED)
+        }
+
+        override fun onItemResumed(key: String) {
+            if (key == mCurrentKeyItem?.key) setState(STATE_PREPARING)
         }
     }
 
@@ -213,8 +217,12 @@ class DownloadItemView : FrameLayout {
                     }
 
                     when ((downloaderCreator as BaseOfflineDownloaderCreator).offlineQueueItem.queueState) {
+                        QueueState.PREPARED -> {
+                            setState(STATE_DOWNLOADING)
+                        }
+
                         QueueState.DOWNLOADING -> {
-                            if (downloaderCreator.getCurrentProgress() == -1) {
+                            if (downloaderCreator.getCurrentProgress() <= 0) {
                                 setState(STATE_DOWNLOADING)
 
                             } else {
@@ -288,6 +296,7 @@ class DownloadItemView : FrameLayout {
                                 if (isWithRemoveAbility) R.drawable.ic_offline_round_delete else
                                     R.drawable.ic_offline_outline_cloud_download
                             }
+
                             STATE_PAUSED -> R.drawable.ic_offline_round_play
                             STATE_NETWORK_ERROR -> R.drawable.ic_offline_baseline_signal_cellular_off
                             STATE_NO_SPACE, STATE_SERVER_ERROR -> R.drawable.ic_offline_round_error_outline

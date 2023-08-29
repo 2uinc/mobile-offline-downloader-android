@@ -1,8 +1,9 @@
 package com.twou.offline
 
-import com.twou.offline.base.downloader.BaseOfflineDownloader
 import com.twou.offline.base.BaseOfflineDownloaderCreator
+import com.twou.offline.base.downloader.BaseOfflineDownloader
 import com.twou.offline.data.IOfflineDownloaderCreator
+import com.twou.offline.data.IOfflineNetworkChangedListener
 import com.twou.offline.error.OfflineNoSpaceException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.OfflineModule
@@ -11,7 +12,6 @@ import com.twou.offline.item.QueueState
 import com.twou.offline.util.BaseOfflineUtils
 import com.twou.offline.util.OfflineDownloaderUtils
 import com.twou.offline.util.OfflineLoggerType
-import com.twou.offline.data.IOfflineNetworkChangedListener
 import io.paperdb.Paper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import okhttp3.internal.http2.StreamResetException
 import java.io.File
 import java.net.SocketException
-import java.util.*
+import java.util.LinkedList
 import javax.net.ssl.SSLException
 
 class OfflineManager internal constructor() : CoroutineScope {
@@ -90,10 +90,7 @@ class OfflineManager internal constructor() : CoroutineScope {
 
             launch {
                 if (creator.offlineQueueItem.queueState == QueueState.PREPARING) {
-                    setNewState(STATE_DOWNLOADING)
-                    startDownloading(creator)
-
-                } else {
+                    creator.offlineQueueItem.queueState = QueueState.PREPARED
                     updateOfflineManagerState()
                 }
             }
@@ -132,10 +129,11 @@ class OfflineManager internal constructor() : CoroutineScope {
         run job@{
             mCreatorList.forEach { creator ->
                 if (creator.getKeyOfflineItem().key == key) {
+                    creator.offlineQueueItem.queueState = QueueState.PREPARED
                     saveQueue()
-                    setNewState(STATE_DOWNLOADING)
-                    startDownloading(creator)
                     setItemResumed(key)
+
+                    updateOfflineManagerState()
                     return@job
                 }
             }
@@ -147,6 +145,7 @@ class OfflineManager internal constructor() : CoroutineScope {
 
         mCreatorList.forEach { creator ->
             if (creator.offlineQueueItem.queueState == QueueState.PREPARING ||
+                creator.offlineQueueItem.queueState == QueueState.PREPARED ||
                 creator.offlineQueueItem.queueState == QueueState.DOWNLOADING
             ) {
                 creator.destroy()
@@ -163,7 +162,7 @@ class OfflineManager internal constructor() : CoroutineScope {
 
         mCreatorList.forEach { creator ->
             if (creator.offlineQueueItem.queueState == currentState) {
-                startDownloading(creator)
+                creator.offlineQueueItem.queueState = QueueState.PREPARED
             }
         }
 
@@ -416,14 +415,30 @@ class OfflineManager internal constructor() : CoroutineScope {
             return
         }
 
+        var downloadsCount = 0
         mCreatorList.forEach { creator ->
-            if (creator.offlineQueueItem.queueState == QueueState.DOWNLOADING) {
-                setNewState(STATE_DOWNLOADING)
-                return
+            if (creator.offlineQueueItem.queueState == QueueState.DOWNLOADING) downloadsCount++
+        }
+
+        if (downloadsCount >= DOWNLOADS_COUNT) {
+            setNewState(STATE_DOWNLOADING)
+            return
+
+        } else {
+            mCreatorList.forEach { creator ->
+                if (creator.offlineQueueItem.queueState == QueueState.PREPARED) {
+                    downloadsCount++
+                    setNewState(STATE_DOWNLOADING)
+                    startDownloading(creator)
+
+                    if (downloadsCount >= DOWNLOADS_COUNT) return
+                }
             }
         }
 
-        setNewState(STATE_PAUSED)
+        if (downloadsCount == 0) {
+            setNewState(STATE_PAUSED)
+        }
     }
 
     private fun setNewState(state: Int) {
@@ -541,5 +556,7 @@ class OfflineManager internal constructor() : CoroutineScope {
         const val STATE_IDLE = 0
         const val STATE_DOWNLOADING = 1
         const val STATE_PAUSED = 2
+
+        const val DOWNLOADS_COUNT = 3
     }
 }

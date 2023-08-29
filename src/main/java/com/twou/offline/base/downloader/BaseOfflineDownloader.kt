@@ -1,10 +1,8 @@
 package com.twou.offline.base.downloader
 
-import android.animation.ValueAnimator
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.view.animation.LinearInterpolator
 import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
 import com.twou.offline.Offline
@@ -16,19 +14,18 @@ import com.twou.offline.util.BaseOfflineUtils
 import com.twou.offline.util.OfflineDownloaderUtils
 import com.twou.offline.util.OfflineLoggerType
 import com.twou.offline.util.OfflineLogs
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import okhttp3.Call
 import okhttp3.Request
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.charset.Charset
-import java.util.concurrent.BrokenBarrierException
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Executors
+
+private val mBgDispatcher =
+    Executors.newFixedThreadPool(15).asCoroutineDispatcher()
 
 abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : BaseDownloader(),
     CoroutineScope {
@@ -44,16 +41,12 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     private val mOfflineLoggerInterceptor = Offline.getOfflineLoggerInterceptor()
 
-    private var mProgressAnimator: ValueAnimator? = null
     private var mCurrentProgress = 0f
-    private var mAnimatorUpdateListener = ValueAnimator.AnimatorUpdateListener {
-        val value = (it.animatedValue as? Float) ?: return@AnimatorUpdateListener
-        mCurrentProgress = value
-
-        mOnDownloadListener?.onProgressChanged(mCurrentProgress.toInt(), 100000)
-    }
 
     override val coroutineContext = Dispatchers.IO
+
+    private val mBgJob = SupervisorJob()
+    private val mBgScope = CoroutineScope(context = Dispatchers.IO + mBgJob)
 
     protected abstract fun startPreparation()
     protected abstract fun checkResourceBeforeSave(
@@ -68,7 +61,6 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
             if (!exists()) mkdirs()
         }
 
-        updateProgress(40000, 100000, 40000)
         startPreparation()
     }
 
@@ -78,6 +70,9 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     override fun destroy() {
         super.destroy()
+
+        mBgJob.cancel()
+        mBgJob.cancelChildren()
 
         try {
             mCurrentCall?.cancel()
@@ -93,7 +88,7 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     protected fun processError(error: Throwable) {
         destroy()
-        handler.post {
+        mBgScope.launch(Dispatchers.Main) {
             if (error is OfflineDownloadException &&
                 BaseOfflineUtils.isThereNoFreeSpace(Offline.getContext())
             ) {
@@ -117,66 +112,57 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
         val allFilesSize = linkQueue.size
 
-        val cyclicBarrier = CyclicBarrier(MAX_THREAD_COUNT) {
-            if (isDestroyed.get()) return@CyclicBarrier
+        mBgScope.launch(Dispatchers.Default) main@{
+            (0..MAX_THREAD_COUNT).map { i ->
+                mBgScope.async(mBgDispatcher) job@{
+                    while (!isDestroyed.get()) {
+                        val resourceLink = linkQueue.poll()
+                        if (resourceLink == null) {
+                            return@job
 
-            OfflineLogs.d(TAG, "Downloading finished")
-            launch(Dispatchers.Main) {
-                progressStatus(allFilesSize, allFilesSize)
-                launch(Dispatchers.Default) {
-                    onFinished()
-                }
-            }
-        }
+                        } else {
+                            var currentProgress = allFilesSize - linkQueue.size
+                            if (currentProgress >= allFilesSize) {
+                                currentProgress = allFilesSize - 1
+                            }
 
-        for (i in 0 until MAX_THREAD_COUNT) {
-            Thread {
-                while (true) {
-                    if (isDestroyed.get()) return@Thread
+                            OfflineLogs.d(TAG, "Downloading ${currentProgress}/$allFilesSize")
 
-                    val resourceLink = linkQueue.poll()
-                    if (resourceLink == null) {
-                        try {
-                            cyclicBarrier.await()
-                            return@Thread
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e: BrokenBarrierException) {
-                            e.printStackTrace()
-                        }
-                    } else {
-                        var currentProgress = allFilesSize - linkQueue.size
-                        if (currentProgress >= allFilesSize) {
-                            currentProgress = allFilesSize - 1
-                        }
+                            mBgScope.launch(Dispatchers.Main) {
+                                progressStatus(currentProgress, allFilesSize)
+                            }
 
-                        OfflineLogs.d(TAG, "Downloading ${currentProgress}/$allFilesSize")
-
-                        handler.post {
-                            progressStatus(currentProgress, allFilesSize)
-                        }
-
-                        try {
-                            if (resourceLink.isNeedCheckBeforeSave) {
-                                downloadFileWithCheck(resourceLink, i)
-
-                            } else {
-                                if (resourceLink.url.contains("/cache/")) {
-                                    copyFileFromCache(resourceLink)
+                            try {
+                                if (resourceLink.isNeedCheckBeforeSave) {
+                                    downloadFileWithCheck(resourceLink, i)
 
                                 } else {
-                                    downloadFileToLocalStorage(resourceLink, i)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                                    if (resourceLink.url.contains("/cache/")) {
+                                        copyFileFromCache(resourceLink)
 
-                            Thread.sleep(2000)
-                            if (!Offline.isConnected()) processError(e)
+                                    } else {
+                                        downloadFileToLocalStorage(resourceLink, i)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+
+                                delay(2000)
+                                if (!Offline.isConnected()) processError(e)
+                            }
                         }
                     }
                 }
-            }.start()
+            }.awaitAll()
+
+            if (isDestroyed.get()) return@main
+
+            withContext(Dispatchers.Main) {
+                if (isDestroyed.get()) return@withContext
+                progressStatus(allFilesSize, allFilesSize)
+            }
+
+            if (!isDestroyed.get()) onFinished()
         }
     }
 
@@ -266,40 +252,15 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         }
     }
 
-    protected fun updateProgress(
-        currentProgress: Int, allProgress: Int, animDuration: Long = 1500L
-    ) {
-        val next = currentProgress.toFloat() * 100 / allProgress
-        val nextValue = next * 1000f
+    protected fun updateProgress(currentProgress: Int, allProgress: Int) {
+        if (isDestroyed.get()) return
 
-        if (nextValue < mCurrentProgress) return
-
-        if (mProgressAnimator == null) {
-            mProgressAnimator = ValueAnimator.ofFloat(mCurrentProgress, nextValue).apply {
-                interpolator = LinearInterpolator()
-                duration = animDuration
-
-                addUpdateListener(mAnimatorUpdateListener)
-                start()
-            }
-
-        } else {
-            mProgressAnimator?.removeUpdateListener(mAnimatorUpdateListener)
-            mProgressAnimator?.end()
-            mProgressAnimator?.setFloatValues(mCurrentProgress, nextValue)
-            mProgressAnimator?.duration = animDuration
-            mProgressAnimator?.addUpdateListener(mAnimatorUpdateListener)
-            mProgressAnimator?.start()
-        }
+        mOnDownloadListener?.onProgressChanged(currentProgress, allProgress)
     }
 
     protected fun setAllDataDownloaded(offlineModule: OfflineModule) {
-        launch(Dispatchers.Main) {
-            mProgressAnimator?.removeAllUpdateListeners()
-            mProgressAnimator?.cancel()
-            launch(Dispatchers.Default) {
-                mOnDownloadListener?.onDownloaded(offlineModule)
-            }
+        launch(Dispatchers.Default) {
+            mOnDownloadListener?.onDownloaded(offlineModule)
         }
     }
 

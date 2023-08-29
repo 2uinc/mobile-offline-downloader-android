@@ -3,6 +3,7 @@ package com.twou.offline.base.downloader
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.net.Uri
+import android.view.ViewGroup
 import android.webkit.*
 import com.twou.offline.Offline
 import com.twou.offline.item.KeyOfflineItem
@@ -239,7 +240,14 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
     }
 
     protected fun clear() {
-        handler.post { mWebView?.destroy() }
+        handler.post {
+            if (mWebView?.parent != null) {
+                mWebView?.parent?.let { parent ->
+                    (parent as ViewGroup).removeView(mWebView)
+                }
+            }
+            mWebView?.destroy()
+        }
     }
 
     protected fun replaceLinksInDocument(

@@ -17,6 +17,8 @@ abstract class BaseOfflineDownloaderCreator(val offlineQueueItem: OfflineQueueIt
 
     override fun prepareOfflineDownloader(unit: (error: Throwable?) -> Unit) {
         mError = null
+        mCurrentProgress = -1
+        mAllProgress = -1
     }
 
     override fun isPrepared(): Boolean = true

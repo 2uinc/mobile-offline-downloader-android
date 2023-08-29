@@ -20,6 +20,7 @@ abstract class BaseHtmlOnePageDownloader(private val mKeyItem: KeyOfflineItem) :
 
         if (isDestroyed.get()) return
 
+        val internalResourceSet = resourceSet.toSet()
         launch(Dispatchers.Default) {
             document.getElementsByTag(HtmlLink.SCRIPT)
                 ?.forEach { element ->
@@ -29,7 +30,7 @@ abstract class BaseHtmlOnePageDownloader(private val mKeyItem: KeyOfflineItem) :
                     }
                 }
 
-            resourceSet.forEach { url ->
+            internalResourceSet.forEach { url ->
                 createHtmlLinkFrom(url, "")?.let { addLink(it) }
             }
 
