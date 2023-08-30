@@ -68,7 +68,7 @@ class DownloadItemView : FrameLayout {
         }
 
         override fun onItemResumed(key: String) {
-            if (key == mCurrentKeyItem?.key) setState(STATE_PREPARING)
+            if (key == mCurrentKeyItem?.key) checkCurrentItemDownloadState()
         }
     }
 
@@ -155,7 +155,9 @@ class DownloadItemView : FrameLayout {
                     }
                 }
 
-                STATE_DOWNLOADING -> mOfflineManager.pause(mCurrentKeyItem?.key ?: "")
+                STATE_PREPARED, STATE_DOWNLOADING -> {
+                    mOfflineManager.pause(mCurrentKeyItem?.key ?: "")
+                }
 
                 STATE_PAUSED -> {
                     if (isNetworkConnected) {
@@ -218,7 +220,7 @@ class DownloadItemView : FrameLayout {
 
                     when ((downloaderCreator as BaseOfflineDownloaderCreator).offlineQueueItem.queueState) {
                         QueueState.PREPARED -> {
-                            setState(STATE_DOWNLOADING)
+                            setState(STATE_PREPARED)
                         }
 
                         QueueState.DOWNLOADING -> {
@@ -254,7 +256,7 @@ class DownloadItemView : FrameLayout {
             mCurrentState = state
 
             when (state) {
-                STATE_PREPARING, STATE_DOWNLOADING -> {
+                STATE_DOWNLOADING -> {
                     if (isVisibilityOnAction) visibility = View.VISIBLE
 
                     downloadStatusImageView.visibility = View.GONE
@@ -279,8 +281,8 @@ class DownloadItemView : FrameLayout {
                     }
                 }
 
-                STATE_IDLE, STATE_DOWNLOADED, STATE_PAUSED, STATE_NETWORK_ERROR,
-                STATE_SERVER_ERROR, STATE_UNSUPPORTED_ERROR, STATE_NO_SPACE -> {
+                STATE_IDLE, STATE_PREPARING, STATE_PREPARED, STATE_DOWNLOADED, STATE_PAUSED,
+                STATE_NETWORK_ERROR, STATE_SERVER_ERROR, STATE_UNSUPPORTED_ERROR, STATE_NO_SPACE -> {
                     if (isVisibilityOnAction) {
                         visibility =
                             if (state == STATE_IDLE) View.GONE else View.VISIBLE
@@ -292,6 +294,7 @@ class DownloadItemView : FrameLayout {
                     downloadStatusImageView.setImageResource(
                         when (state) {
                             STATE_IDLE -> R.drawable.ic_offline_round_download
+                            STATE_PREPARING, STATE_PREPARED -> R.drawable.ic_offline_cloud_clock
                             STATE_DOWNLOADED -> {
                                 if (isWithRemoveAbility) R.drawable.ic_offline_round_delete else
                                     R.drawable.ic_offline_outline_cloud_download
@@ -358,6 +361,7 @@ class DownloadItemView : FrameLayout {
 
         const val STATE_IDLE = 1
         const val STATE_PREPARING = 2
+        const val STATE_PREPARED = 10
         const val STATE_DOWNLOADING = 3
         const val STATE_DOWNLOADED = 4
         const val STATE_PAUSED = 5

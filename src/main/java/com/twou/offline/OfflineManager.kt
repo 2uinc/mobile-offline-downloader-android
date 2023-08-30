@@ -91,8 +91,9 @@ class OfflineManager internal constructor() : CoroutineScope {
             launch {
                 if (creator.offlineQueueItem.queueState == QueueState.PREPARING) {
                     creator.offlineQueueItem.queueState = QueueState.PREPARED
-                    updateOfflineManagerState()
                 }
+
+                updateOfflineManagerState()
             }
         }
     }
@@ -299,6 +300,11 @@ class OfflineManager internal constructor() : CoroutineScope {
         try {
             Paper.book().read<List<OfflineQueueItem>>("offline_queue")?.forEach {
                 if (Offline.isConnected() && it.queueState == QueueState.NETWORK_ERROR) {
+                    it.queueState = QueueState.PREPARING
+
+                } else if (it.queueState == QueueState.PREPARED ||
+                    it.queueState == QueueState.DOWNLOADING
+                ) {
                     it.queueState = QueueState.PREPARING
                 }
 
