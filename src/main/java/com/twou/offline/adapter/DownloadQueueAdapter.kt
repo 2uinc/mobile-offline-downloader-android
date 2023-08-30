@@ -30,6 +30,10 @@ class DownloadQueueAdapter(private val mOnDownloadQueueListener: OnDownloadQueue
 
             if (itemCount == 0) mOnDownloadQueueListener.onItemsEmpty()
         }
+
+        override fun onItemDownloaded(key: String) {
+            onItemRemoved(key)
+        }
     }
 
     init {

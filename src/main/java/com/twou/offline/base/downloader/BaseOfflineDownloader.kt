@@ -88,7 +88,7 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     protected fun processError(error: Throwable) {
         destroy()
-        mBgScope.launch(Dispatchers.Main) {
+        handler.post {
             if (error is OfflineDownloadException &&
                 BaseOfflineUtils.isThereNoFreeSpace(Offline.getContext())
             ) {
