@@ -147,7 +147,7 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
                             } catch (e: Exception) {
                                 e.printStackTrace()
 
-                                delay(2000)
+                                delay(4000)
                                 if (!Offline.isConnected()) processError(e)
                             }
                         }

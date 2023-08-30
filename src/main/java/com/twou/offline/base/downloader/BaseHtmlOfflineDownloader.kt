@@ -167,7 +167,7 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
                             if (mimeType.isNullOrEmpty()) {
                                 val fileUrl =
                                     if (element.hasAttr("title")) element.attr("title") else element.text()
-                                fileName = OfflineDownloaderUtils.getUrlFileName(fileUrl)
+                                fileName = "file." + OfflineDownloaderUtils.getUrlFileName(fileUrl).substringAfterLast(".")
                                 extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
                                 mimeType =
                                     MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
