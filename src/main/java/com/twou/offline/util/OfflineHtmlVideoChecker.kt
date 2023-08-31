@@ -149,6 +149,9 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                                             child.getElementsByClass("p3sdk-interactive-transcript-content")
                                                 ?.firstOrNull()
                                                 ?.attr("style", "padding-top: 30px;")
+
+                                            child.getElementsByClass("p3sdk-interactive-transcript-bottom-bar")
+                                                ?.firstOrNull()?.remove()
                                         }
                                     }
                                 }
