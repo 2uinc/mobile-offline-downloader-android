@@ -115,8 +115,43 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                         } else if (element.hasParent() && element.parent()
                                 .hasAttr("data-vjs-player")
                         ) {
-                            BaseOfflineUtils.getParentElementById("app", element.parent())?.let {
-                                workingElement = it
+                            if (element.parent().hasParent()) {
+                                workingElement = element.parent()
+
+                                run job@{
+                                    mDocument?.getElementsByTag(BaseHtmlOfflineDownloader.HtmlLink.SCRIPT)
+                                        ?.forEach { scriptElement ->
+                                            if (scriptElement.hasAttr(BaseHtmlOfflineDownloader.HtmlLink.SRC) &&
+                                                scriptElement.attr(BaseHtmlOfflineDownloader.HtmlLink.SRC)
+                                                    .contains("main.")
+                                            ) {
+                                                scriptElement.remove()
+                                                return@job
+                                            }
+                                        }
+                                }
+
+                                element.parent().parent().children().forEach { child ->
+                                    if (child.hasAttr("class")) {
+                                        if (child.attr("class")
+                                                .contains("styles__TranscriptHeader")
+                                        ) {
+                                            child.remove()
+
+                                        } else if (child.attr("class")
+                                                .contains("styles__TranscriptBody")
+                                        ) {
+                                            child.attr("style", "")
+                                            child.getElementsByClass("p3sdk-interactive-transcript-control-bar")
+                                                ?.firstOrNull()
+                                                ?.attr("style", "display: none;")
+
+                                            child.getElementsByClass("p3sdk-interactive-transcript-content")
+                                                ?.firstOrNull()
+                                                ?.attr("style", "padding-top: 30px;")
+                                        }
+                                    }
+                                }
                             }
 
                         } else if (element.hasParent() && element.parent().hasAttr("aria-label")
