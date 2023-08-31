@@ -68,6 +68,10 @@ class DownloadItemView : FrameLayout {
             }
         }
 
+        override fun onItemError(key: String, error: Throwable) {
+            if (key == mCurrentKeyItem?.key) checkCurrentItemDownloadState()
+        }
+
         override fun onItemPaused(key: String) {
             if (key == mCurrentKeyItem?.key) setState(STATE_PAUSED)
         }
@@ -224,6 +228,10 @@ class DownloadItemView : FrameLayout {
                     }
 
                     when ((downloaderCreator as BaseOfflineDownloaderCreator).offlineQueueItem.queueState) {
+                        QueueState.PREPARING -> {
+                            setState(STATE_PREPARING)
+                        }
+
                         QueueState.PREPARED -> {
                             setState(STATE_PREPARED)
                         }
