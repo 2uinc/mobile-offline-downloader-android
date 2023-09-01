@@ -39,7 +39,7 @@ class DownloadItemView : FrameLayout {
         }
 
         override fun onProgressChanged(key: String, currentProgress: Int, allProgress: Int) {
-            if (key == mCurrentKeyItem?.key && mCurrentState == STATE_DOWNLOADING) {
+            if (key == mCurrentKeyItem?.key && mCurrentState != STATE_PAUSED) {
                 if (currentProgress > 0) {
                     setState(STATE_DOWNLOADING, currentProgress, allProgress)
 

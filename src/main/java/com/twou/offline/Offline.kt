@@ -123,7 +123,7 @@ class Offline private constructor(
             val client = if (mClient == null) {
                 OkHttpClient.Builder()
                     .readTimeout(60, TimeUnit.SECONDS)
-                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .connectTimeout(15, TimeUnit.SECONDS)
                     .build()
             } else mClient
 
