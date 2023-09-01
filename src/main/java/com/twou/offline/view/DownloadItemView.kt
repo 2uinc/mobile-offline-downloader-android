@@ -39,7 +39,7 @@ class DownloadItemView : FrameLayout {
         }
 
         override fun onProgressChanged(key: String, currentProgress: Int, allProgress: Int) {
-            if (key == mCurrentKeyItem?.key) {
+            if (key == mCurrentKeyItem?.key && mCurrentState == STATE_DOWNLOADING) {
                 if (currentProgress > 0) {
                     setState(STATE_DOWNLOADING, currentProgress, allProgress)
 
@@ -51,6 +51,10 @@ class DownloadItemView : FrameLayout {
 
         override fun onItemAdded(key: String) {
             if (key == mCurrentKeyItem?.key) setState(STATE_PREPARING)
+        }
+
+        override fun onItemPrepared(key: String) {
+            if (key == mCurrentKeyItem?.key) setState(STATE_PREPARED)
         }
 
         override fun onItemRemoved(key: String) {
@@ -269,14 +273,19 @@ class DownloadItemView : FrameLayout {
             mCurrentState = state
 
             when (state) {
-                STATE_DOWNLOADING -> {
+                STATE_PREPARING, STATE_DOWNLOADING -> {
                     if (isVisibilityOnAction) visibility = View.VISIBLE
 
                     downloadStatusImageView.visibility = View.GONE
-                    progressStatusImageView.setImageResource(R.drawable.ic_offline_round_pause)
-                    progressStatusImageView.visibility = View.VISIBLE
+                    if (state == STATE_DOWNLOADING) {
+                        progressStatusImageView.setImageResource(R.drawable.ic_offline_round_pause)
+                        progressStatusImageView.visibility = View.VISIBLE
 
-                    if (currentProgress != -1 && allProgress != -1) {
+                    } else {
+                        progressStatusImageView.visibility = View.GONE
+                    }
+
+                    if (state == STATE_DOWNLOADING && currentProgress != -1 && allProgress != -1) {
                         downloadProgressBar.max = allProgress
                         downloadProgressBar.progress = currentProgress
 
@@ -294,7 +303,7 @@ class DownloadItemView : FrameLayout {
                     }
                 }
 
-                STATE_IDLE, STATE_PREPARING, STATE_PREPARED, STATE_DOWNLOADED, STATE_PAUSED,
+                STATE_IDLE, STATE_PREPARED, STATE_DOWNLOADED, STATE_PAUSED,
                 STATE_NETWORK_ERROR, STATE_SERVER_ERROR, STATE_UNSUPPORTED_ERROR, STATE_NO_SPACE -> {
                     if (isVisibilityOnAction) {
                         visibility =
@@ -307,7 +316,7 @@ class DownloadItemView : FrameLayout {
                     downloadStatusImageView.setImageResource(
                         when (state) {
                             STATE_IDLE -> R.drawable.ic_offline_round_download
-                            STATE_PREPARING, STATE_PREPARED -> R.drawable.ic_offline_cloud_clock
+                            STATE_PREPARED -> R.drawable.ic_offline_cloud_clock
                             STATE_DOWNLOADED -> {
                                 if (isWithRemoveAbility) R.drawable.ic_offline_round_delete else
                                     R.drawable.ic_offline_outline_cloud_download

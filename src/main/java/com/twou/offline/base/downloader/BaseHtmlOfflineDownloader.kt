@@ -165,12 +165,15 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
                                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
 
                             if (mimeType.isNullOrEmpty()) {
-                                val fileUrl =
-                                    if (element.hasAttr("title")) element.attr("title") else element.text()
-                                fileName = "file." + OfflineDownloaderUtils.getUrlFileName(fileUrl).substringAfterLast(".")
-                                extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
-                                mimeType =
-                                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+                                val (type, name) = getMimeType(element.attr("title"))
+                                mimeType = type
+                                fileName = name
+                            }
+
+                            if (mimeType.isNullOrEmpty()) {
+                                val (type, name) = getMimeType(element.text())
+                                mimeType = type
+                                fileName = name
                             }
 
                             if (BaseOfflineUtils.isMimeTypeSupported(mimeType)) isNeedAddLink = true
@@ -200,6 +203,13 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
         }
 
         return links
+    }
+
+    private fun getMimeType(fileUrl: String): Pair<String?, String> {
+        val fileName = OfflineDownloaderUtils.getUrlFileName(fileUrl)
+        val extension =
+            MimeTypeMap.getFileExtensionFromUrl("file." + fileName.substringAfterLast("."))
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) to fileName
     }
 
     protected fun createHtmlLinkFrom(

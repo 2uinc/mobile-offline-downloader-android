@@ -91,6 +91,7 @@ class OfflineManager internal constructor() : CoroutineScope {
             launch {
                 if (creator.offlineQueueItem.queueState == QueueState.PREPARING) {
                     creator.offlineQueueItem.queueState = QueueState.PREPARED
+                    setItemPrepared(creator.getKeyOfflineItem().key)
                 }
 
                 updateOfflineManagerState()
@@ -111,8 +112,8 @@ class OfflineManager internal constructor() : CoroutineScope {
         run job@{
             mCreatorList.forEach { creator ->
                 if (creator.getKeyOfflineItem().key == key) {
-                    creator.offlineQueueItem.queueState = QueueState.PAUSED
                     creator.destroy()
+                    creator.offlineQueueItem.queueState = QueueState.PAUSED
 
                     saveQueue()
                     setItemPaused(creator.getKeyOfflineItem().key)
@@ -399,6 +400,7 @@ class OfflineManager internal constructor() : CoroutineScope {
                     )
                 }
 
+            }, object : BaseOfflineDownloader.OnDownloadProgressListener {
                 override fun onProgressChanged(currentProgress: Int, allProgress: Int) {
                     creator.setProgress(
                         if (currentProgress >= allProgress) allProgress else currentProgress,
@@ -465,6 +467,10 @@ class OfflineManager internal constructor() : CoroutineScope {
         mListenerSet.forEach { it.onItemAdded(key) }
     }
 
+    private fun setItemPrepared(key: String) {
+        mListenerSet.forEach { it.onItemPrepared(key) }
+    }
+
     private fun setItemRemoved(key: String) {
         mListenerSet.forEach { it.onItemRemoved(key) }
     }
@@ -507,6 +513,9 @@ class OfflineManager internal constructor() : CoroutineScope {
         override fun onItemAdded(key: String) {
         }
 
+        override fun onItemPrepared(key: String) {
+        }
+
         override fun onItemRemoved(key: String) {
         }
 
@@ -539,6 +548,8 @@ class OfflineManager internal constructor() : CoroutineScope {
         fun onProgressChanged(key: String, currentProgress: Int, allProgress: Int)
 
         fun onItemAdded(key: String)
+
+        fun onItemPrepared(key: String)
 
         fun onItemRemoved(key: String)
 

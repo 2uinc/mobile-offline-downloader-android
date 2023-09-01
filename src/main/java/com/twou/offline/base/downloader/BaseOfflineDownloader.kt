@@ -1,8 +1,10 @@
 package com.twou.offline.base.downloader
 
+import android.animation.ValueAnimator
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.view.animation.LinearInterpolator
 import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
 import com.twou.offline.Offline
@@ -35,13 +37,23 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
     protected val filesDirPath = OfflineDownloaderUtils.getDirPath(mKeyItem.key)
 
     private var mOnDownloadListener: OnDownloadListener? = null
+    private var mOnDownloadProgressListener: OnDownloadProgressListener? = null
     private var mCurrentCall: Call? = null
 
     private val mGeneralFilesMap = mutableMapOf<String, ResourceLink>()
 
     private val mOfflineLoggerInterceptor = Offline.getOfflineLoggerInterceptor()
 
+    private var mProgressAnimator: ValueAnimator? = null
     private var mCurrentProgress = 0f
+    private var mAnimatorUpdateListener = ValueAnimator.AnimatorUpdateListener {
+        val value = (it.animatedValue as? Float) ?: return@AnimatorUpdateListener
+        if (isDestroyed.get()) return@AnimatorUpdateListener
+
+        mCurrentProgress = value
+
+        mOnDownloadProgressListener?.onProgressChanged(mCurrentProgress.toInt(), 100000)
+    }
 
     override val coroutineContext = Dispatchers.IO
 
@@ -53,14 +65,16 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         link: ResourceLink, data: String, threadId: Int
     ): String
 
-    fun prepare(l: OnDownloadListener) {
-        mOnDownloadListener = l
+    fun prepare(l1: OnDownloadListener, l2: OnDownloadProgressListener) {
+        mOnDownloadListener = l1
+        mOnDownloadProgressListener = l2
         mCurrentProgress = 0f
 
         File(filesDirPath).apply {
             if (!exists()) mkdirs()
         }
 
+        updateProgress(40000, 100000, 40000)
         startPreparation()
     }
 
@@ -70,6 +84,8 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     override fun destroy() {
         super.destroy()
+
+        mOnDownloadProgressListener = null
 
         mBgJob.cancel()
         mBgJob.cancelChildren()
@@ -84,6 +100,11 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         } catch (ignore: Exception) {
         }
         handler.removeCallbacksAndMessages(null)
+
+        handler.post {
+            mProgressAnimator?.removeAllUpdateListeners()
+            mProgressAnimator?.cancel()
+        }
     }
 
     protected fun processError(error: Throwable) {
@@ -170,7 +191,7 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
     protected fun downloadFileToLocalStorage(resourceLink: ResourceLink, threadId: Int = 1000) {
         OfflineLogs.d(
             TAG,
-            "trying to download file " + resourceLink.url + " | with path " + resourceLink.getFilePath()
+            mKeyItem.key + ": trying to download file " + resourceLink.url + " | with path " + resourceLink.getFilePath()
         )
 
         val client = Offline.getClient()
@@ -187,6 +208,12 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         val call = client.newCall(requestBuilder.build())
         mCurrentCall = call
         val response = call.execute()
+
+        response.headers["content-length"]?.let { contentLength ->
+            OfflineLogs.d(
+                TAG, mKeyItem.key + ": File size is " + contentLength + " for " + resourceLink.url
+            )
+        }
 
         if (MimeTypeMap.getFileExtensionFromUrl(resourceLink.fileName).isBlank() ||
             resourceLink.fileName.endsWith(".bin")
@@ -250,17 +277,46 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         if (!isDestroyed.get()) {
             tempFile.renameTo(downloadFile)
         }
+
+        OfflineLogs.d(TAG, mKeyItem.key + ": File downloaded for " + resourceLink.url)
     }
 
-    protected fun updateProgress(currentProgress: Int, allProgress: Int) {
+    protected fun updateProgress(
+        currentProgress: Int, allProgress: Int, animDuration: Long = 1500L
+    ) {
         if (isDestroyed.get()) return
 
-        mOnDownloadListener?.onProgressChanged(currentProgress, allProgress)
+        val next = currentProgress.toFloat() * 100 / allProgress
+        val nextValue = next * 1000f
+
+        if (nextValue < mCurrentProgress) return
+
+        if (mProgressAnimator == null) {
+            mProgressAnimator = ValueAnimator.ofFloat(mCurrentProgress, nextValue).apply {
+                interpolator = LinearInterpolator()
+                duration = animDuration
+
+                addUpdateListener(mAnimatorUpdateListener)
+                start()
+            }
+
+        } else {
+            mProgressAnimator?.removeUpdateListener(mAnimatorUpdateListener)
+            mProgressAnimator?.end()
+            mProgressAnimator?.setFloatValues(mCurrentProgress, nextValue)
+            mProgressAnimator?.duration = animDuration
+            mProgressAnimator?.addUpdateListener(mAnimatorUpdateListener)
+            mProgressAnimator?.start()
+        }
     }
 
     protected fun setAllDataDownloaded(offlineModule: OfflineModule) {
-        launch(Dispatchers.Default) {
-            mOnDownloadListener?.onDownloaded(offlineModule)
+        launch(Dispatchers.Main) {
+            mProgressAnimator?.removeAllUpdateListeners()
+            mProgressAnimator?.cancel()
+            launch(Dispatchers.Default) {
+                mOnDownloadListener?.onDownloaded(offlineModule)
+            }
         }
     }
 
@@ -320,8 +376,12 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
         fun onDownloaded(offlineModule: OfflineModule)
         fun onError(error: Throwable)
-        fun onProgressChanged(currentProgress: Int, allProgress: Int)
         fun onWarning(message: String)
+    }
+
+    interface OnDownloadProgressListener {
+
+        fun onProgressChanged(currentProgress: Int, allProgress: Int)
     }
 
     companion object {
