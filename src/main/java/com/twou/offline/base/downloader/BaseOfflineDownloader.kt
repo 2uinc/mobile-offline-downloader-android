@@ -74,7 +74,7 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
             if (!exists()) mkdirs()
         }
 
-        updateProgress(40000, 100000, 40000)
+        updateProgress(60000, 100000, 60000)
         startPreparation()
     }
 

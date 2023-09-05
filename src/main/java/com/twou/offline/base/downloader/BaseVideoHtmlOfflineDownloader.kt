@@ -1,5 +1,6 @@
 package com.twou.offline.base.downloader
 
+import com.twou.offline.Offline
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.util.BaseOfflineUtils
 import com.twou.offline.util.OfflineHtmlVideoChecker
@@ -94,9 +95,9 @@ abstract class BaseVideoHtmlOfflineDownloader(keyItem: KeyOfflineItem) :
             }
 
             if (isNeedAddScripts) {
-                document.head().appendElement("style").html(BaseOfflineUtils.getHtmlErrorCss())
+                document.head().appendElement("style").html(Offline.getHtmlErrorCSS())
                 document.head().appendElement("script")
-                    .append(BaseOfflineUtils.getHtmlErrorScript())
+                    .append(Offline.getHtmlErrorScript())
             }
 
             launch(Dispatchers.Main) {

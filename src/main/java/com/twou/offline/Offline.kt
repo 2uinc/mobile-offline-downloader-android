@@ -13,19 +13,22 @@ import com.twou.offline.base.BaseOfflineDownloaderCreator
 import com.twou.offline.base.repository.BaseOfflineRepository
 import com.twou.offline.base.repository.BaseOfflineUnsupportedRepository
 import com.twou.offline.data.IOfflineLoggerInterceptor
+import com.twou.offline.data.IOfflineNetworkChangedListener
 import com.twou.offline.data.IOfflineRepository
 import com.twou.offline.data.IOfflineUnsupportedRepository
 import com.twou.offline.item.OfflineQueueItem
 import com.twou.offline.util.BaseOfflineUtils
-import com.twou.offline.data.IOfflineNetworkChangedListener
+import com.twou.offline.util.OfflineConst
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 class Offline private constructor(
-    private var mContext: Context, private var mClient: OkHttpClient,
-    private var mBaseUrl: String, private var mOfflineRepository: IOfflineRepository,
-    private var mOfflineUnsupportedRepository: IOfflineUnsupportedRepository,
-    private var mOfflineLoggerInterceptor: IOfflineLoggerInterceptor?
+    private val mContext: Context, private val mClient: OkHttpClient,
+    private val mBaseUrl: String, private val mOfflineRepository: IOfflineRepository,
+    private val mOfflineUnsupportedRepository: IOfflineUnsupportedRepository,
+    private val mOfflineLoggerInterceptor: IOfflineLoggerInterceptor?,
+    private val mHtmlErrorOverlay: String, private val mHtmlErrorScript: String,
+    private val mHtmlErrorCSS: String
 ) {
 
     internal var isConnected = false
@@ -93,6 +96,9 @@ class Offline private constructor(
         private var mOfflineRepository: IOfflineRepository? = null
         private var mOfflineUnsupportedRepository: IOfflineUnsupportedRepository? = null
         private var mOfflineLoggerInterceptor: IOfflineLoggerInterceptor? = null
+        private var mHtmlErrorOverlay: String? = null
+        private var mHtmlErrorScript: String? = null
+        private var mHtmlErrorCSS: String? = null
 
         fun setClient(client: OkHttpClient): Builder {
             mClient = client
@@ -119,6 +125,21 @@ class Offline private constructor(
             return this
         }
 
+        fun setHtmlErrorOverlay(html: String): Builder {
+            mHtmlErrorOverlay = html
+            return this
+        }
+
+        fun setHtmlErrorScript(script: String): Builder {
+            mHtmlErrorScript = script
+            return this
+        }
+
+        fun setHtmlErrorCSS(css: String): Builder {
+            mHtmlErrorCSS = css
+            return this
+        }
+
         internal fun build(context: Context): Offline {
             val client = if (mClient == null) {
                 OkHttpClient.Builder()
@@ -133,9 +154,14 @@ class Offline private constructor(
                 if (mOfflineUnsupportedRepository == null) BaseOfflineUnsupportedRepository() else
                     mOfflineUnsupportedRepository
 
+            val message = context.getString(R.string.offline_download_content_not_available)
+
             return Offline(
                 context, client!!, mBaseUrl, offlineRepository!!, unsupportedRepository!!,
-                mOfflineLoggerInterceptor
+                mOfflineLoggerInterceptor,
+                mHtmlErrorOverlay ?: OfflineConst.HTML_ERROR_OVERLAY.replace("#MESSAGE#", message),
+                mHtmlErrorScript ?: OfflineConst.HTML_ERROR_SCRIPT,
+                mHtmlErrorCSS ?: OfflineConst.HTML_ERROR_CSS
             )
         }
     }
@@ -198,6 +224,21 @@ class Offline private constructor(
             }
 
             return false
+        }
+
+        fun getHtmlErrorOverlay(): String {
+            checkInstance()
+            return instance?.mHtmlErrorOverlay ?: ""
+        }
+
+        fun getHtmlErrorScript(): String {
+            checkInstance()
+            return instance?.mHtmlErrorScript ?: ""
+        }
+
+        fun getHtmlErrorCSS(): String {
+            checkInstance()
+            return instance?.mHtmlErrorCSS ?: ""
         }
 
         internal fun getClient(): OkHttpClient {
