@@ -160,8 +160,16 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                         } else if (element.hasParent() && element.parent().hasAttr("aria-label")
                             && element.parent().attr("aria-label") == "Video Player"
                         ) {
-                            BaseOfflineUtils.getParentElementById("oyster", element.parent())?.let {
+                            mDocument?.getElementsByClass("oyster-wrapper")?.firstOrNull()?.let {
                                 workingElement = it
+                                mDocument?.getElementsByClass("oyster-grid-transcript")
+                                    ?.firstOrNull()?.let { element ->
+                                        element.getElementsByClass("transcripts-container")
+                                            ?.firstOrNull()?.removeClass("transcripts-container")
+                                        element.getElementById("copy-to-clipboard")?.remove()
+                                        mDocument?.getElementById("oyster")?.appendChild(element)
+                                        element.attr("style", "padding: 20px;")
+                                    }
                             }
 
                             if (workingElement == null) workingElement = element
