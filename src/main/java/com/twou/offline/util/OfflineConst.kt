@@ -2,6 +2,8 @@ package com.twou.offline.util
 
 object OfflineConst {
 
+    const val IS_PREPARED = false
+
     val OFFLINE_VIDEO_SCRIPT = """
         <script>
             function getPos(el) {
