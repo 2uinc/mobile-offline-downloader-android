@@ -1,5 +1,7 @@
 package com.twou.offline.base.downloader
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.net.Uri
 import android.os.Handler
@@ -12,10 +14,7 @@ import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineNoSpaceException
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineModule
-import com.twou.offline.util.BaseOfflineUtils
-import com.twou.offline.util.OfflineDownloaderUtils
-import com.twou.offline.util.OfflineLoggerType
-import com.twou.offline.util.OfflineLogs
+import com.twou.offline.util.*
 import kotlinx.coroutines.*
 import okhttp3.Call
 import okhttp3.Request
@@ -45,14 +44,29 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
     private val mOfflineLoggerInterceptor = Offline.getOfflineLoggerInterceptor()
 
     private var mProgressAnimator: ValueAnimator? = null
-    private var mCurrentProgress = 0f
+    private var mCurrentFloatProgress = 0f
+    private var mCurrentProgress = 0
+    private var mAllProgress = 0
+    private var isAnimationStarted = false
     private var mAnimatorUpdateListener = ValueAnimator.AnimatorUpdateListener {
         val value = (it.animatedValue as? Float) ?: return@AnimatorUpdateListener
         if (isDestroyed.get()) return@AnimatorUpdateListener
 
-        mCurrentProgress = value
+        mCurrentFloatProgress = value
 
-        mOnDownloadProgressListener?.onProgressChanged(mCurrentProgress.toInt(), 100000)
+        mOnDownloadProgressListener?.onProgressChanged(mCurrentFloatProgress.toInt(), 100000)
+    }
+    private var mAnimatorListener = object : AnimatorListenerAdapter() {
+        override fun onAnimationEnd(animation: Animator) {
+            if (isAnimationStarted && mCurrentProgress < mAllProgress) {
+                isAnimationStarted = false
+                val nextProgress = mCurrentProgress + 1
+                val time = if (nextProgress == mAllProgress && mAllProgress > 10) 30000L else
+                    if (nextProgress == mAllProgress) 20000L else 10000L
+
+                updateProgress(nextProgress, mAllProgress, time)
+            }
+        }
     }
 
     override val coroutineContext = Dispatchers.IO
@@ -68,13 +82,13 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
     fun prepare(l1: OnDownloadListener, l2: OnDownloadProgressListener) {
         mOnDownloadListener = l1
         mOnDownloadProgressListener = l2
-        mCurrentProgress = 0f
+        mCurrentFloatProgress = 0f
 
         File(filesDirPath).apply {
             if (!exists()) mkdirs()
         }
 
-        updateProgress(60000, 100000, 60000)
+        if (OfflineConst.IS_PREPARED) updateProgress(6, 10, 60000)
         startPreparation()
     }
 
@@ -286,26 +300,37 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
     ) {
         if (isDestroyed.get()) return
 
+        mCurrentProgress = currentProgress
+        mAllProgress = allProgress
+
         val next = currentProgress.toFloat() * 100 / allProgress
         val nextValue = next * 1000f
 
-        if (nextValue < mCurrentProgress) return
+        if (nextValue < mCurrentFloatProgress) return
 
         if (mProgressAnimator == null) {
-            mProgressAnimator = ValueAnimator.ofFloat(mCurrentProgress, nextValue).apply {
+            mProgressAnimator = ValueAnimator.ofFloat(mCurrentFloatProgress, nextValue).apply {
                 interpolator = LinearInterpolator()
                 duration = animDuration
 
                 addUpdateListener(mAnimatorUpdateListener)
+                addUpdateListener { }
+                if (OfflineConst.IS_PREPARED) {
+                    addListener(mAnimatorListener)
+                    addListener(object : AnimatorListenerAdapter() {})
+                }
                 start()
             }
 
         } else {
+            isAnimationStarted = true
+            mProgressAnimator?.removeListener(mAnimatorListener)
             mProgressAnimator?.removeUpdateListener(mAnimatorUpdateListener)
             mProgressAnimator?.end()
-            mProgressAnimator?.setFloatValues(mCurrentProgress, nextValue)
+            mProgressAnimator?.setFloatValues(mCurrentFloatProgress, nextValue)
             mProgressAnimator?.duration = animDuration
             mProgressAnimator?.addUpdateListener(mAnimatorUpdateListener)
+            if (OfflineConst.IS_PREPARED) mProgressAnimator?.addListener(mAnimatorListener)
             mProgressAnimator?.start()
         }
     }
