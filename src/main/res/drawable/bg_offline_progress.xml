@@ -5,5 +5,5 @@
     android:thickness="2dp"
     android:useLevel="true">
 
-    <solid android:color="@color/offlineColorAccent" />
+    <solid android:color="?attr/colorControlNormal" />
 </shape>

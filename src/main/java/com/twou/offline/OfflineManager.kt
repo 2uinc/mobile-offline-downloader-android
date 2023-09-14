@@ -16,11 +16,8 @@ import io.paperdb.Paper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.internal.http2.StreamResetException
 import java.io.File
-import java.net.SocketException
 import java.util.LinkedList
-import javax.net.ssl.SSLException
 
 class OfflineManager internal constructor() : CoroutineScope {
 
@@ -48,11 +45,7 @@ class OfflineManager internal constructor() : CoroutineScope {
 
                     } else {
                         mCreatorList.forEach { creator ->
-                            val error = creator.getError()
-                            if (creator.offlineQueueItem.queueState == QueueState.SERVER_ERROR &&
-                                (error is SocketException || error is StreamResetException ||
-                                        error is SSLException)
-                            ) {
+                            if (creator.offlineQueueItem.queueState != QueueState.UNSUPPORTED_ERROR) {
                                 creator.offlineQueueItem.queueState = QueueState.NETWORK_ERROR
                             }
                         }
@@ -148,7 +141,8 @@ class OfflineManager internal constructor() : CoroutineScope {
         mCreatorList.forEach { creator ->
             if (creator.offlineQueueItem.queueState == QueueState.PREPARING ||
                 creator.offlineQueueItem.queueState == QueueState.PREPARED ||
-                creator.offlineQueueItem.queueState == QueueState.DOWNLOADING
+                creator.offlineQueueItem.queueState == QueueState.DOWNLOADING ||
+                creator.offlineQueueItem.queueState == QueueState.SERVER_ERROR
             ) {
                 creator.destroy()
                 creator.offlineQueueItem.queueState = newItemState
@@ -163,7 +157,10 @@ class OfflineManager internal constructor() : CoroutineScope {
         if (mCurrentState != STATE_PAUSED) return
 
         mCreatorList.forEach { creator ->
-            if (creator.offlineQueueItem.queueState == currentState) {
+            if ((currentState == QueueState.PAUSED &&
+                        creator.offlineQueueItem.queueState != QueueState.UNSUPPORTED_ERROR) ||
+                creator.offlineQueueItem.queueState == currentState
+            ) {
                 creator.offlineQueueItem.queueState = QueueState.PREPARED
             }
         }
@@ -345,7 +342,7 @@ class OfflineManager internal constructor() : CoroutineScope {
                     mOfflineUnsupportedRepository.setUnsupported(creator.getKeyOfflineItem().key)
                     creator.offlineQueueItem.queueState = QueueState.UNSUPPORTED_ERROR
 
-                } else {
+                } else if (creator.offlineQueueItem.queueState != QueueState.NETWORK_ERROR) {
                     creator.offlineQueueItem.queueState = QueueState.SERVER_ERROR
                 }
                 saveQueue()
@@ -382,7 +379,7 @@ class OfflineManager internal constructor() : CoroutineScope {
                             mOfflineUnsupportedRepository.setUnsupported(creator.getKeyOfflineItem().key)
                             creator.offlineQueueItem.queueState = QueueState.UNSUPPORTED_ERROR
 
-                        } else {
+                        } else if (creator.offlineQueueItem.queueState != QueueState.NETWORK_ERROR) {
                             creator.offlineQueueItem.queueState = QueueState.SERVER_ERROR
                         }
                         saveQueue()

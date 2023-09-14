@@ -6,10 +6,12 @@
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/topAppBar"
-        style="@style/Widget.MaterialComponents.Toolbar.Surface"
+        style="@style/Widget.MaterialComponents.Toolbar.Primary"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
+        android:background="@color/offlineColorToolbar"
         android:clipChildren="false"
+        android:theme="@style/ToolbarTheme"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -25,8 +27,9 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginEnd="@dimen/offline_horizontal_padding"
                 android:layout_marginBottom="8dp"
+                android:includeFontPadding="false"
                 android:text="@string/offline_download_queue_title"
-                android:textColor="@color/offlineColorOnSurface"
+                android:textColor="#fff"
                 android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/resumePauseTextView"
@@ -41,6 +44,7 @@
                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                 android:padding="12dp"
                 android:text="@string/offline_download_pause_all"
+                android:textColor="#fff"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

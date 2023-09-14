@@ -35,6 +35,7 @@ class Offline private constructor(
 
     private val mNetworkChangedSet = mutableSetOf<IOfflineNetworkChangedListener>()
     private val mNetworkHandler = Handler(Looper.getMainLooper())
+    private val mCheckHandler = Handler(Looper.getMainLooper())
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
@@ -86,7 +87,27 @@ class Offline private constructor(
             isConnected = isOnline
 
             mNetworkChangedSet.forEach { it.onChanged(isConnected) }
+
+            if (!isConnected) {
+                startConnectionCheck()
+            }
         }
+    }
+
+    private fun startConnectionCheck() {
+        mCheckHandler.postDelayed({
+            try {
+                val isOnline = BaseOfflineUtils.isOnline(mContext)
+                if (isOnline) {
+                    notifyNetworkChanged(true)
+
+                } else {
+                    startConnectionCheck()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }, 5000)
     }
 
     class Builder {

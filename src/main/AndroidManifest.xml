@@ -10,6 +10,7 @@
             android:autoRemoveFromRecents="true"
             android:excludeFromRecents="true"
             android:noHistory="true"
-            android:taskAffinity=".DownloadQueueActivity" />
+            android:taskAffinity=".DownloadQueueActivity"
+            android:theme="@style/OfflineMainTheme" />
     </application>
 </manifest>

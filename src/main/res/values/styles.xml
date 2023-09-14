@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="OfflineMainTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/offlineColorPrimary</item>
+        <item name="colorAccent">?attr/colorControlNormal</item>
+        <item name="colorPrimaryDark">@color/offlineColorPrimaryDark</item>
+    </style>
+
+    <style name="ToolbarTheme" parent="ThemeOverlay.MaterialComponents.Toolbar.Primary">
+        <item name="colorOnPrimary">#fff</item>
+    </style>
+
+</resources>
