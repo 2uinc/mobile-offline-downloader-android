@@ -35,7 +35,7 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
         mWebView = createWebView()
     }
 
-    open fun createWebView(): WebView {
+    protected open fun createWebView(): WebView {
         val webView = WebView(Offline.getContext())
 
         val webSettings: WebSettings = webView.settings
@@ -63,7 +63,7 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
             override fun onPagePrepared() {
                 handler.post { webView.loadUrl(OfflineConst.PRINT_HTML) }
             }
-        }) {
+        }, { isNeedDelayWebView() }) {
             override fun onLoadResource(view: WebView?, url: String?) {
                 super.onLoadResource(view, url)
 
@@ -79,6 +79,10 @@ abstract class BaseHtmlOfflineDownloader(keyItem: KeyOfflineItem) : BaseOfflineD
         }
 
         webView.addJavascriptInterface(JavaScriptInterface(), "android")
+    }
+
+    protected open fun isNeedDelayWebView(): Boolean {
+        return true
     }
 
     override fun checkResourceBeforeSave(link: ResourceLink, data: String, threadId: Int): String {

@@ -10,7 +10,7 @@ import android.webkit.WebViewClient
 import com.twou.offline.Offline
 
 open class OfflineDelayWebViewClient(
-    private val mOnDelayListener: OfflineDelayListener, private val isNeedDelay: Boolean = true,
+    private val mOnDelayListener: OfflineDelayListener, private val isNeedDelay: () -> Boolean,
     private val finishDelayTime: Long = 15000, private val loadResourceDelayTime: Long = 15000
 ) : WebViewClient() {
 
@@ -40,7 +40,7 @@ open class OfflineDelayWebViewClient(
 
         mHandler.removeCallbacksAndMessages(null)
         mHandler.removeCallbacks(mRunnable)
-        mHandler.postDelayed(mRunnable, if (isNeedDelay) finishDelayTime else 0)
+        mHandler.postDelayed(mRunnable, if (isNeedDelay()) finishDelayTime else 0)
     }
 
     override fun onLoadResource(view: WebView?, url: String?) {
@@ -61,7 +61,7 @@ open class OfflineDelayWebViewClient(
     }
 
     private fun resetDelay() {
-        if (isNeedDelay) {
+        if (isNeedDelay()) {
             if (!isClientWorking) return
 
             mHandler.removeCallbacksAndMessages(null)

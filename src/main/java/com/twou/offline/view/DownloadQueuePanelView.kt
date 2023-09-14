@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.FrameLayout
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
-import com.twou.offline.R
 import com.twou.offline.activity.DownloadQueueActivity
 import com.twou.offline.base.BaseOfflineDownloaderCreator
 import com.twou.offline.data.IOfflineNetworkChangedListener
@@ -110,15 +109,19 @@ class DownloadQueuePanelView @JvmOverloads constructor(
     }
 
     private fun updateCurrentState() {
-        if (mOfflineManager.getCurrentState() == OfflineManager.STATE_PAUSED) {
-            binding.queuePanelTextView.setText(R.string.offline_download_state_paused)
+        if (!isConnected) return
 
-            binding.downloadQueuePanelLeftContainerLayout.visibility = View.GONE
+        if (mOfflineManager.getCurrentState() == OfflineManager.STATE_PAUSED) {
+            binding.downloadQueuePanelItemView.visibility = View.GONE
+            binding.downloadQueuePanelLeftContainerLayout.visibility = View.VISIBLE
             binding.downloadQueuePanelLayout.visibility = View.VISIBLE
+            binding.queuePanelTextView.visibility = View.GONE
+            binding.pausedTextView.visibility = View.VISIBLE
+            binding.downloadQueuePanelTopView.visibility = View.VISIBLE
+            binding.downloadQueuePanelBottomView.visibility = View.VISIBLE
 
         } else if (mOfflineManager.getCurrentState() == OfflineManager.STATE_IDLE) {
-            binding.downloadQueuePanelLayout.visibility =
-                if (isConnected) View.GONE else View.VISIBLE
+            binding.downloadQueuePanelLayout.visibility = View.GONE
 
         } else {
             val contentName =
@@ -126,8 +129,13 @@ class DownloadQueuePanelView @JvmOverloads constructor(
                     ?.offlineQueueItem?.keyItem?.title ?: ""
             binding.queuePanelTextView.text = contentName
 
+            binding.downloadQueuePanelItemView.visibility = View.VISIBLE
             binding.downloadQueuePanelLeftContainerLayout.visibility = View.VISIBLE
             binding.downloadQueuePanelLayout.visibility = View.VISIBLE
+            binding.queuePanelTextView.visibility = View.VISIBLE
+            binding.pausedTextView.visibility = View.GONE
+            binding.downloadQueuePanelTopView.visibility = View.VISIBLE
+            binding.downloadQueuePanelBottomView.visibility = View.VISIBLE
         }
     }
 
@@ -135,19 +143,17 @@ class DownloadQueuePanelView @JvmOverloads constructor(
         this.isConnected = isConnected
 
         if (isConnected) {
-            binding.queuePanelTextView.visibility = View.VISIBLE
-            binding.downloadQueuePanelLeftContainerLayout.visibility =
-                if (isDownloadInProgress && mOfflineManager.getCurrentState() != OfflineManager.STATE_PAUSED)
-                    View.VISIBLE else View.GONE
             binding.noInternetQueuePanelTextView.visibility = View.GONE
-            binding.downloadQueuePanelLayout.visibility =
-                if (isDownloadInProgress) View.VISIBLE else View.GONE
+            updateCurrentState()
 
         } else {
             binding.queuePanelTextView.visibility = View.GONE
+            binding.pausedTextView.visibility = View.GONE
             binding.downloadQueuePanelLeftContainerLayout.visibility = View.GONE
             binding.noInternetQueuePanelTextView.visibility = View.VISIBLE
             binding.downloadQueuePanelLayout.visibility = View.VISIBLE
+            binding.downloadQueuePanelTopView.visibility = View.GONE
+            binding.downloadQueuePanelBottomView.visibility = View.GONE
         }
     }
 

@@ -24,6 +24,7 @@ import java.io.FileOutputStream
 import java.nio.charset.Charset
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
+import kotlin.math.min
 
 private val mBgDispatcher =
     Executors.newFixedThreadPool(15).asCoroutineDispatcher()
@@ -54,16 +55,16 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
         mCurrentFloatProgress = value
 
-        mOnDownloadProgressListener?.onProgressChanged(mCurrentFloatProgress.toInt(), 100000)
+        mOnDownloadProgressListener?.onProgressChanged(
+            min(mCurrentFloatProgress.toInt(), 99000), 100000
+        )
     }
     private var mAnimatorListener = object : AnimatorListenerAdapter() {
         override fun onAnimationEnd(animation: Animator) {
             if (isAnimationStarted && mCurrentProgress < mAllProgress) {
                 isAnimationStarted = false
                 val nextProgress = mCurrentProgress + 1
-                val time = if (nextProgress == mAllProgress && mAllProgress > 10) 30000L else
-                    if (nextProgress == mAllProgress) 20000L else 10000L
-
+                val time = if (nextProgress == mAllProgress) 50000L else 20000L
                 updateProgress(nextProgress, mAllProgress, time)
             }
         }

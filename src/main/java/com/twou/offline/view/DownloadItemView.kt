@@ -205,6 +205,9 @@ class DownloadItemView : FrameLayout {
                 }
             }
         }
+
+        clipChildren = false
+        clipToPadding = false
     }
 
     private fun checkCurrentItemDownloadState() {
@@ -330,14 +333,7 @@ class DownloadItemView : FrameLayout {
                         }
                     )
                     downloadStatusImageView.visibility = View.VISIBLE
-
-                    if (state == STATE_PAUSED) {
-                        progressStatusImageView.setImageResource(R.drawable.ic_offline_round_play)
-                        progressStatusImageView.visibility = View.VISIBLE
-
-                    } else {
-                        progressStatusImageView.visibility = View.GONE
-                    }
+                    progressStatusImageView.visibility = View.GONE
                 }
             }
 

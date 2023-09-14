@@ -5,12 +5,18 @@
     android:id="@+id/downloadContainerLayout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:padding="2dp">
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:paddingStart="4dp"
+    android:paddingTop="2dp"
+    android:paddingEnd="4dp"
+    android:paddingBottom="2dp">
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/downloadStatusImageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:foreground="?android:attr/selectableItemBackgroundBorderless"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -20,6 +26,7 @@
         android:id="@+id/progressStatusImageView"
         android:layout_width="16dp"
         android:layout_height="16dp"
+        android:foreground="?android:attr/selectableItemBackgroundBorderless"
         app:layout_constraintBottom_toBottomOf="@+id/downloadInfinityProgressBar"
         app:layout_constraintEnd_toEndOf="@+id/downloadInfinityProgressBar"
         app:layout_constraintStart_toStartOf="parent"
@@ -53,7 +60,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:includeFontPadding="false"
-        android:textColor="@color/offlineColorAccent"
+        android:textColor="?attr/colorControlNormal"
         android:textSize="7sp"
         app:layout_constraintEnd_toEndOf="@+id/downloadProgressBar"
         app:layout_constraintStart_toStartOf="@+id/downloadProgressBar"

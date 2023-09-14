@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="offlineColorPrimary">#000</color>
     <color name="offlineColorAccent">#546573</color>
+    <color name="offlineColorPrimaryDark">#2D3B45</color>
     <color name="offlineColorDestroy">#CDFF0022</color>
     <color name="offlineColorDownloadPanel">#DFE6EE</color>
+    <color name="offlineColorDownloadPanelLine">#CDD7E1</color>
     <color name="offlineColorDivider">#DFE6EE</color>
-    <color name="offlineColorOnSurface">#000000</color>
+    <color name="offlineColorToolbar">#556572</color>
 </resources>
