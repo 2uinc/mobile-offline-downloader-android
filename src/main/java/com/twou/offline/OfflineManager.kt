@@ -78,10 +78,11 @@ class OfflineManager internal constructor() : CoroutineScope {
                 } else {
                     creator.offlineQueueItem.queueState = QueueState.SERVER_ERROR
                 }
-                setItemError(creator.getKeyOfflineItem().key, error)
             }
 
             launch {
+                error?.let { setItemError(creator.getKeyOfflineItem().key, error) }
+
                 if (creator.offlineQueueItem.queueState == QueueState.PREPARING) {
                     creator.offlineQueueItem.queueState = QueueState.PREPARED
                     setItemPrepared(creator.getKeyOfflineItem().key)
