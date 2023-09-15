@@ -38,6 +38,7 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:indeterminate="true"
+        android:indeterminateTint="?attr/colorControlNormal"
         android:visibility="invisible"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -51,6 +52,7 @@
         android:max="100"
         android:progress="80"
         android:progressDrawable="@drawable/bg_offline_progress"
+        android:progressTint="?attr/colorControlNormal"
         android:rotation="-90"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

@@ -50,7 +50,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="16dp"
-        android:ellipsize="middle"
+        android:ellipsize="end"
         android:includeFontPadding="false"
         android:lines="1"
         android:paddingVertical="12dp"

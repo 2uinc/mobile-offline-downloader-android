@@ -18,16 +18,12 @@ import com.twou.offline.util.*
 import kotlinx.coroutines.*
 import okhttp3.Call
 import okhttp3.Request
-import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.charset.Charset
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.Executors
 import kotlin.math.min
 
-private val mBgDispatcher =
-    Executors.newFixedThreadPool(15).asCoroutineDispatcher()
 
 abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : BaseDownloader(),
     CoroutineScope {
@@ -148,9 +144,9 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
         val allFilesSize = linkQueue.size
 
-        mBgScope.launch(Dispatchers.Default) main@{
+        mBgScope.launch main@{
             (0..MAX_THREAD_COUNT).map { i ->
-                mBgScope.async(mBgDispatcher) job@{
+                mBgScope.async job@{
                     while (!isDestroyed.get()) {
                         val resourceLink = linkQueue.poll()
                         if (resourceLink == null) {
@@ -272,15 +268,14 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
             )
         }
         body?.let { responseBody ->
-            BufferedInputStream(responseBody.byteStream()).use { inputStream ->
-                val data = ByteArray(1024)
+            val inputStream = responseBody.byteStream()
+            val data = ByteArray(1024 * 8)
 
-                var count: Int
+            var count: Int
 
-                while (inputStream.read(data).also { count = it } != -1) {
-                    if (isDestroyed.get()) return@use
-                    outputStream.write(data, 0, count)
-                }
+            while (inputStream.read(data).also { count = it } != -1) {
+                if (isDestroyed.get()) return@let
+                outputStream.write(data, 0, count)
             }
 
             responseBody.close()
