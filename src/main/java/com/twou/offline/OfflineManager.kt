@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Collections
 import java.util.LinkedList
 
 class OfflineManager internal constructor() : CoroutineScope {
@@ -25,7 +26,8 @@ class OfflineManager internal constructor() : CoroutineScope {
     private val mOfflineUnsupportedRepository = Offline.getOfflineUnsupportedRepository()
     private val mOfflineLoggerInterceptor = Offline.getOfflineLoggerInterceptor()
 
-    private val mCreatorList = LinkedList<BaseOfflineDownloaderCreator>()
+    private val mCreatorList =
+        Collections.synchronizedList(LinkedList<BaseOfflineDownloaderCreator>())
 
     private var mCurrentState = STATE_IDLE
 

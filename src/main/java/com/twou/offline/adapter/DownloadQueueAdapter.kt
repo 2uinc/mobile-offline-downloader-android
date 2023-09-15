@@ -8,11 +8,12 @@ import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
 import com.twou.offline.databinding.ItemDownloadQueueBinding
 import com.twou.offline.item.OfflineQueueItem
+import java.util.Collections
 
 class DownloadQueueAdapter(private val mOnDownloadQueueListener: OnDownloadQueueListener) :
     RecyclerView.Adapter<DownloadQueueAdapter.ViewHolder>() {
 
-    private val mItems = mutableListOf<OfflineQueueItem>()
+    private val mItems = Collections.synchronizedList(mutableListOf<OfflineQueueItem>())
 
     private val mOfflineManager = Offline.getOfflineManager()
 
@@ -63,6 +64,8 @@ class DownloadQueueAdapter(private val mOnDownloadQueueListener: OnDownloadQueue
     }
 
     override fun getItemCount(): Int = mItems.size
+
+    fun getItems(): MutableList<OfflineQueueItem> = mItems
 
     fun destroy() {
         mOfflineManager.removeListener(mDownloadListener)

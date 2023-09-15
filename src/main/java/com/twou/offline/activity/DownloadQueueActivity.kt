@@ -10,6 +10,7 @@ import com.twou.offline.R
 import com.twou.offline.adapter.DownloadQueueAdapter
 import com.twou.offline.data.IOfflineNetworkChangedListener
 import com.twou.offline.databinding.ActivityDownloadQueueBinding
+import com.twou.offline.item.QueueState
 
 class DownloadQueueActivity : AppCompatActivity() {
 
@@ -62,6 +63,7 @@ class DownloadQueueActivity : AppCompatActivity() {
                 OfflineManager.STATE_DOWNLOADING -> {
                     mOfflineManager.pauseAll()
                 }
+
                 OfflineManager.STATE_PAUSED -> {
                     mOfflineManager.resumeAll()
                 }
@@ -71,6 +73,14 @@ class DownloadQueueActivity : AppCompatActivity() {
         mOfflineListener = object : OfflineManager.OfflineListener() {
             override fun onStateChanged(state: Int) {
                 mCurrentOfflineState = state
+                updatePauseResumeState()
+            }
+
+            override fun onItemRemoved(key: String) {
+                updatePauseResumeState()
+            }
+
+            override fun onItemDownloaded(key: String) {
                 updatePauseResumeState()
             }
         }
@@ -92,11 +102,21 @@ class DownloadQueueActivity : AppCompatActivity() {
                 binding.resumePauseTextView.visibility =
                     if (isNetworkConnected) View.VISIBLE else View.GONE
             }
+
             OfflineManager.STATE_PAUSED -> {
-                binding.resumePauseTextView.setText(R.string.offline_download_resume_all)
-                binding.resumePauseTextView.visibility =
-                    if (isNetworkConnected) View.VISIBLE else View.GONE
+                val hasPausedContent = mDownloadQueueAdapter?.getItems()
+                    ?.find { it.queueState != QueueState.UNSUPPORTED_ERROR } != null
+
+                if (hasPausedContent) {
+                    binding.resumePauseTextView.setText(R.string.offline_download_resume_all)
+                    binding.resumePauseTextView.visibility =
+                        if (isNetworkConnected) View.VISIBLE else View.GONE
+
+                } else {
+                    binding.resumePauseTextView.visibility = View.GONE
+                }
             }
+
             else -> {
                 binding.resumePauseTextView.visibility = View.GONE
             }
