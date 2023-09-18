@@ -5,68 +5,61 @@
     android:id="@+id/itemCardView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="0dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="8dp"
+    android:clipChildren="false"
+    app:cardCornerRadius="2dp"
     app:cardElevation="2dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clipChildren="false"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:clipChildren="false">
 
-        <View
-            android:id="@+id/dividerView"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginStart="@dimen/offline_horizontal_padding"
-            android:layout_marginEnd="@dimen/offline_horizontal_padding"
-            android:background="@color/offlineColorDivider" />
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/mainTextView"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="12dp"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:includeFontPadding="false"
+            android:lines="2"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/downloadItemView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="Investment Management online short course" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginStart="@dimen/offline_horizontal_padding"
-            android:layout_marginEnd="@dimen/offline_horizontal_padding"
-            android:clipChildren="false">
+        <com.twou.offline.view.DownloadItemView
+            android:id="@+id/downloadItemView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:paddingVertical="4dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/removeImageView"
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/mainTextView"
-                style="@style/TextAppearance.MaterialComponents.Headline6"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                android:ellipsize="end"
-                android:textSize="16sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/downloadItemView"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_chainStyle="packed"
-                tools:text="Investment Management online short course" />
-
-            <com.twou.offline.view.DownloadItemView
-                android:id="@+id/downloadItemView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:paddingVertical="4dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/removeImageView"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/removeImageView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                android:padding="4dp"
-                android:tint="@color/offlineColorDestroy"
-                app:layout_constraintBottom_toBottomOf="@+id/mainTextView"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/mainTextView"
-                app:srcCompat="@drawable/ic_offline_baseline_delete" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </LinearLayout>
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/removeImageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            android:tint="@color/offlineColorDestroy"
+            app:layout_constraintBottom_toBottomOf="@+id/mainTextView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/mainTextView"
+            app:srcCompat="@drawable/ic_offline_baseline_delete" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

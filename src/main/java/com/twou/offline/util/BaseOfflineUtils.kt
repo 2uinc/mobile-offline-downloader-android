@@ -17,6 +17,8 @@ class BaseOfflineUtils {
         fun isMimeTypeSupported(mimeType: String?): Boolean {
             if (mimeType == null) return false
 
+            if (mimeType.contains("/x-msdos-program")) return false
+
             return mimeType.startsWith("application/") || mimeType.startsWith("audio/")
                     || mimeType.startsWith("video/") || mimeType.startsWith("image/")
                     || mimeType.startsWith("text/plain")
