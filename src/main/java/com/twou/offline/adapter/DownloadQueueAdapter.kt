@@ -1,7 +1,6 @@
 package com.twou.offline.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.twou.offline.Offline
@@ -52,12 +51,8 @@ class DownloadQueueAdapter(private val mOnDownloadQueueListener: OnDownloadQueue
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mItems[position]
 
-        holder.binding.dividerView.visibility =
-            if (position == 0) View.GONE else View.VISIBLE
         holder.binding.mainTextView.text = item.keyItem.title
-
         holder.binding.downloadItemView.setKeyItem(item.keyItem)
-
         holder.binding.removeImageView.setOnClickListener {
             mOfflineManager.remove(item.keyItem.key)
         }
