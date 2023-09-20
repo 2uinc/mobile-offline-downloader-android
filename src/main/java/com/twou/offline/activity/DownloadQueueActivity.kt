@@ -3,6 +3,8 @@ package com.twou.offline.activity
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
@@ -48,12 +50,20 @@ class DownloadQueueActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        mDownloadQueueAdapter =
-            DownloadQueueAdapter(object : DownloadQueueAdapter.OnDownloadQueueListener {
+        DividerItemDecoration(this, DividerItemDecoration.VERTICAL).also { decoration ->
+            ContextCompat.getDrawable(this, R.drawable.vertical_space_2dp)?.let {
+                decoration.setDrawable(it)
+                binding.recyclerView.addItemDecoration(decoration)
+            }
+        }
+        mDownloadQueueAdapter = DownloadQueueAdapter(
+            mContext = this,
+            object : DownloadQueueAdapter.OnDownloadQueueListener {
                 override fun onItemsEmpty() {
                     finish()
                 }
-            })
+            }
+        )
         binding.recyclerView.adapter = mDownloadQueueAdapter
 
         binding.resumePauseTextView.setOnClickListener {

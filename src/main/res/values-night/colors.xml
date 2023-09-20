@@ -2,8 +2,11 @@
 <resources>
     <color name="offlineColorPrimary">#fff</color>
     <color name="offlineColorPrimaryDark">#0F0F0F</color>
-    <color name="offlineColorDownloadPanel">#181818</color>
+    <color name="offlineColorDownloadPanel">#272727</color>
     <color name="offlineColorDownloadPanelLine">#272727</color>
     <color name="offlineColorDivider">#68696A</color>
     <color name="offlineColorToolbar">#181818</color>
+    <color name="offlineColorButtonDefault">#C2C2C2</color>
+    <color name="offlineRecyclerBackground">#1C1C1C</color>
+    <color name="offlineRecyclerItem">#313131</color>
 </resources>

@@ -11,8 +11,8 @@
     <string name="offline_download_state_paused">Download Paused</string>
     <string name="offline_download_queue_no_internet">No Internet Connection</string>
     <string name="offline_download_queue_title">Download Queue</string>
-    <string name="offline_download_pause_all">PAUSE ALL</string>
-    <string name="offline_download_resume_all">RESUME ALL</string>
+    <string name="offline_download_pause_all">Pause all</string>
+    <string name="offline_download_resume_all">Resume all</string>
 
     <string name="offline_dialog_ok">OK</string>
     <string name="offline_dialog_retry">Retry</string>
