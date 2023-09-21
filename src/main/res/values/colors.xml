@@ -2,10 +2,13 @@
 <resources>
     <color name="offlineColorPrimary">#000</color>
     <color name="offlineColorAccent">#546573</color>
-    <color name="offlineColorPrimaryDark">#2D3B45</color>
-    <color name="offlineColorDestroy">#CDFF0022</color>
-    <color name="offlineColorDownloadPanel">#DFE6EE</color>
-    <color name="offlineColorDownloadPanelLine">#CDD7E1</color>
+    <color name="offlineColorPrimaryDark">#2196F3</color>
+    <color name="offlineColorDestroy">#FFDD0022</color>
+    <color name="offlineColorDownloadPanel">#E9EBEF</color>
+    <color name="offlineColorDownloadPanelLine">#E9EBEF</color>
     <color name="offlineColorDivider">#DFE6EE</color>
-    <color name="offlineColorToolbar">#556572</color>
+    <color name="offlineColorToolbar">#42A5F5</color>
+    <color name="offlineColorButtonDefault">#646464</color>
+    <color name="offlineRecyclerBackground">#f2f0ef</color>
+    <color name="offlineRecyclerItem">#FAFAFA</color>
 </resources>

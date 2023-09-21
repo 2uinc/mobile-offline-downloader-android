@@ -321,7 +321,7 @@ class DownloadItemView : FrameLayout {
                             STATE_IDLE -> R.drawable.ic_offline_round_download
                             STATE_PREPARED -> R.drawable.ic_offline_cloud_clock
                             STATE_DOWNLOADED -> {
-                                if (isWithRemoveAbility) R.drawable.ic_offline_round_delete else
+                                if (isWithRemoveAbility) R.drawable.ic_offline_baseline_delete else
                                     R.drawable.ic_offline_outline_cloud_download
                             }
 
