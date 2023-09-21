@@ -54,6 +54,8 @@ class Offline private constructor(
     init {
         isConnected = BaseOfflineUtils.isOnline(mContext)
 
+        if (!isConnected) startConnectionCheck()
+
         val networkRequest = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -88,9 +90,7 @@ class Offline private constructor(
 
             mNetworkChangedSet.forEach { it.onChanged(isConnected) }
 
-            if (!isConnected) {
-                startConnectionCheck()
-            }
+            if (!isConnected) startConnectionCheck()
         }
     }
 
