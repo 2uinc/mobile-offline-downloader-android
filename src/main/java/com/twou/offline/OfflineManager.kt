@@ -292,7 +292,7 @@ class OfflineManager internal constructor() : CoroutineScope {
     private fun saveQueue() {
         val items = mutableListOf<OfflineQueueItem>()
 
-        mCreatorList.forEach { creator -> items.add(creator.offlineQueueItem) }
+        mCreatorList.toList().forEach { creator -> items.add(creator.offlineQueueItem) }
 
         Paper.book().write("offline_queue", items)
     }
