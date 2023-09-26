@@ -32,7 +32,7 @@ open class BaseDownloader {
         val call = client.newCall(requestBuilder.build())
         mCurrentCall = call
         val response = call.execute()
-        return response.body?.string() ?: ""
+        response.body.use { return it?.string() ?: "" }
     }
 
     fun readFileContent(path: String): String {
