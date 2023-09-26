@@ -2,7 +2,7 @@ package com.twou.offline.util
 
 object OfflineConst {
 
-    const val IS_PREPARED = false
+    const val IS_PREPARED = true
 
     val OFFLINE_VIDEO_SCRIPT = """
         <script>

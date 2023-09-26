@@ -267,18 +267,16 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
                 mKeyItem, OfflineLoggerType.DOWNLOAD_WARNING, "Body is NULL ${response.code}"
             )
         }
-        body?.let { responseBody ->
+        body?.use { responseBody ->
             val inputStream = responseBody.byteStream()
             val data = ByteArray(1024 * 8)
 
             var count: Int
 
             while (inputStream.read(data).also { count = it } != -1) {
-                if (isDestroyed.get()) return@let
+                if (isDestroyed.get()) return@use
                 outputStream.write(data, 0, count)
             }
-
-            responseBody.close()
         }
 
         outputStream.flush()
