@@ -4,54 +4,24 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.twou.offline.Offline
-import com.twou.offline.OfflineManager
 import com.twou.offline.R
 import com.twou.offline.databinding.ItemDownloadQueueBinding
 import com.twou.offline.item.OfflineQueueItem
-import java.util.Collections
 
 class DownloadQueueAdapter(
     mContext: Context,
-    private val mOnDownloadQueueListener: OnDownloadQueueListener
+    private val mCallback: (DownloadQueueCallback) -> Unit
 ) :
     RecyclerView.Adapter<DownloadQueueAdapter.ViewHolder>() {
 
-    private val mItems = Collections.synchronizedList(mutableListOf<OfflineQueueItem>())
-
-    private val mOfflineManager = Offline.getOfflineManager()
-
-    private val mDownloadListener = object : OfflineManager.OfflineListener() {
-        override fun onItemRemoved(key: String) {
-            run job@{
-                mItems.forEachIndexed { index, item ->
-                    if (item.keyItem.key == key) {
-                        mItems.removeAt(index)
-                        notifyItemRemoved(index)
-                        return@job
-                    }
-                }
-            }
-
-            if (itemCount == 0) mOnDownloadQueueListener.onItemsEmpty()
-        }
-
-        override fun onItemDownloaded(key: String) {
-            onItemRemoved(key)
-        }
-    }
+    private val mItems: MutableList<OfflineQueueItem> = mutableListOf()
 
     private val mFirstBg = ContextCompat.getDrawable(mContext, R.drawable.bg_recycler_first)
     private val mRecyclerBg = ContextCompat.getDrawable(mContext, R.drawable.bg_recycler)
     private val mSingleBg = ContextCompat.getDrawable(mContext, R.drawable.bg_recycler_single)
     private val mLastBg = ContextCompat.getDrawable(mContext, R.drawable.bg_recycler_last)
-
-    init {
-        mItems.addAll(mOfflineManager.getAllDownloads())
-
-        mOfflineManager.addListener(mDownloadListener)
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemDownloadQueueBinding
@@ -61,47 +31,50 @@ class DownloadQueueAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mItems[position]
-        holder.binding.itemCardView.background = when (holder.itemViewType) {
-            ViewType.FIRST_ELEMENT -> mFirstBg
-            ViewType.LAST_ELEMENT -> mLastBg
-            ViewType.SINGLE_ELEMENT -> mSingleBg
-            else -> mRecyclerBg
+        holder.binding.itemCardView.background = if (itemCount == 1) {
+            mSingleBg
+        } else {
+            when (position) {
+                0 -> mFirstBg
+                mItems.size - 1 -> mLastBg
+                else -> mRecyclerBg
+            }
         }
         holder.binding.mainTextView.text = item.keyItem.title
         holder.binding.downloadItemView.setKeyItem(item.keyItem)
         holder.binding.removeImageView.setOnClickListener {
-            mOfflineManager.remove(item.keyItem.key)
+            mCallback(DownloadQueueCallback.OnRemoveItemCallback(item.keyItem.key))
         }
     }
 
-    override fun getItemViewType(position: Int): Int {
-        if (itemCount == 1) return ViewType.SINGLE_ELEMENT
-        return when (position) {
-            0 -> ViewType.FIRST_ELEMENT
-            mItems.size - 1 -> ViewType.LAST_ELEMENT
-            else -> ViewType.ELEMENT
-        }
-    }
+    override fun getItemCount() = mItems.size
 
-    override fun getItemCount(): Int = mItems.size
+    override fun getItemId(position: Int) = mItems[position].keyItem.key.hashCode().toLong()
 
-    fun getItems(): MutableList<OfflineQueueItem> = mItems
+    fun getItems() = mItems
 
-    fun destroy() {
-        mOfflineManager.removeListener(mDownloadListener)
+    fun setData(items: List<OfflineQueueItem>) {
+        val result = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = getItems().size
+
+            override fun getNewListSize() = items.size
+
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+                getItems()[oldItemPosition].keyItem.key == items[newItemPosition].keyItem.key
+
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+                getItems()[oldItemPosition].queueState == items[newItemPosition].queueState
+                        && newItemPosition != 0 && newItemPosition != items.size - 1
+
+        })
+        result.dispatchUpdatesTo(this)
+        mItems.clear()
+        mItems.addAll(items)
     }
 
     class ViewHolder(val binding: ItemDownloadQueueBinding) : RecyclerView.ViewHolder(binding.root)
 
-    interface OnDownloadQueueListener {
-
-        fun onItemsEmpty()
-    }
-
-    private object ViewType {
-        const val FIRST_ELEMENT = 0
-        const val LAST_ELEMENT = 1
-        const val ELEMENT = 2
-        const val SINGLE_ELEMENT = 3
+    sealed class DownloadQueueCallback {
+        data class OnRemoveItemCallback(val itemKey: String) : DownloadQueueCallback()
     }
 }

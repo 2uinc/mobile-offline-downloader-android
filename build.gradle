@@ -30,6 +30,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
     implementation "androidx.constraintlayout:constraintlayout:${OfflineDependencies.constraintLayout}"
     implementation "androidx.appcompat:appcompat:${OfflineDependencies.appCompat}"
+    implementation "androidx.fragment:fragment-ktx:1.6.1"
     implementation "androidx.recyclerview:recyclerview:${OfflineDependencies.recyclerView}"
     implementation "com.google.android.material:material:${OfflineDependencies.material}"
 }
