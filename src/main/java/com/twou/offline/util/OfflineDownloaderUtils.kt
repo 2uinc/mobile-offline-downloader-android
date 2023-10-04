@@ -27,7 +27,7 @@ object OfflineDownloaderUtils {
 
         fileName = fileName.replace("?", "").replace(":", "")
             .replace("%", "").replace(" ", "")
-            .replace(",", "")
+            .replace(",", "").replace("—", "")
 
         if (isIncorrectFilename(fileName)) {
             fileName = renameFilePathWith(fileName, "")

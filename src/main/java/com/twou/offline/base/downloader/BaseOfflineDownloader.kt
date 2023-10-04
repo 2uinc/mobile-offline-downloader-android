@@ -153,34 +153,47 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
                             return@job
 
                         } else {
-                            var currentProgress = allFilesSize - linkQueue.size
-                            if (currentProgress >= allFilesSize) {
-                                currentProgress = allFilesSize - 1
-                            }
+                            while (!isDestroyed.get() && !resourceLink.isDownloaded()) {
+                                var currentProgress = allFilesSize - linkQueue.size
+                                if (currentProgress >= allFilesSize) {
+                                    currentProgress = allFilesSize - 1
+                                }
 
-                            OfflineLogs.d(TAG, "Downloading ${currentProgress}/$allFilesSize")
+                                OfflineLogs.d(TAG, "Downloading ${currentProgress}/$allFilesSize")
 
-                            mBgScope.launch(Dispatchers.Main) {
-                                progressStatus(currentProgress, allFilesSize)
-                            }
+                                mBgScope.launch(Dispatchers.Main) {
+                                    progressStatus(currentProgress, allFilesSize)
+                                }
 
-                            try {
-                                if (resourceLink.isNeedCheckBeforeSave) {
-                                    downloadFileWithCheck(resourceLink, i)
-
-                                } else {
-                                    if (resourceLink.url.contains("/cache/")) {
-                                        copyFileFromCache(resourceLink)
+                                try {
+                                    if (resourceLink.isNeedCheckBeforeSave) {
+                                        downloadFileWithCheck(resourceLink, i)
 
                                     } else {
-                                        downloadFileToLocalStorage(resourceLink, i)
+                                        if (resourceLink.url.contains("/cache/")) {
+                                            copyFileFromCache(resourceLink)
+
+                                        } else {
+                                            downloadFileToLocalStorage(resourceLink, i)
+                                        }
+                                    }
+
+                                    resourceLink.finishDownload()
+
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+
+                                    delay(4000)
+                                    if (!Offline.isConnected() ||
+                                        BaseOfflineUtils.isThereNoFreeSpace(Offline.getContext())
+                                    ) {
+                                        resourceLink.finishDownload()
+                                        processError(OfflineDownloadException(e))
+
+                                    } else {
+                                        resourceLink.newAttemptToDownload()
                                     }
                                 }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-
-                                delay(4000)
-                                if (!Offline.isConnected()) processError(e)
                             }
                         }
                     }
@@ -384,11 +397,21 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
 
     data class ResourceLink(
         var url: String, var dirPath: String, var fileName: String, var oldUrl: String = "",
-        var isNeedCheckBeforeSave: Boolean = false
+        var isNeedCheckBeforeSave: Boolean = false, var attemptCount: Int = 0
     ) {
         fun getFilePath() = "file://$dirPath/$fileName"
 
         fun getShortFilePath() = "$dirPath/$fileName"
+
+        fun isDownloaded(): Boolean = attemptCount >= MAX_ATTEMPT_COUNT
+
+        fun newAttemptToDownload() {
+            attemptCount++
+        }
+
+        fun finishDownload() {
+            attemptCount = MAX_ATTEMPT_COUNT
+        }
     }
 
     interface OnDownloadListener {
@@ -408,5 +431,7 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         private const val TAG = "OfflineDownloader"
 
         private const val MAX_THREAD_COUNT = 3
+
+        private const val MAX_ATTEMPT_COUNT = 3
     }
 }
