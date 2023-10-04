@@ -2,7 +2,7 @@
 <resources>
     <color name="offlineColorPrimary">#fff</color>
     <color name="offlineColorPrimaryDark">#0F0F0F</color>
-    <color name="offlineColorDownloadPanel">#272727</color>
+    <color name="offlineColorDownloadPanel">#191919</color>
     <color name="offlineColorDownloadPanelLine">#272727</color>
     <color name="offlineColorDivider">#68696A</color>
     <color name="offlineColorToolbar">#181818</color>

@@ -45,13 +45,13 @@ class DownloadQueueActivity : AppCompatActivity() {
                 return@onEach
             }
             mDownloadQueueAdapter?.setData(it.items)
+            updatePauseResumeState()
         }.launchIn(lifecycleScope)
     }
 
     override fun onDestroy() {
         mOfflineListener?.let { mOfflineManager.removeListener(it) }
         mIOfflineNetworkChangedListener?.let { Offline.removeNetworkListener(it) }
-        mViewModel.onDestroy()
         super.onDestroy()
     }
 

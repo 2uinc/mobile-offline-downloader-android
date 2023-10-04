@@ -34,7 +34,7 @@ class BaseOfflineUtils {
             val file = context.getExternalFilesDir(null) ?: return true
             val freeSpace = file.freeSpace
             OfflineLogs.d("BaseOfflineUtils", "free space is $freeSpace")
-            return freeSpace <= 104857600
+            return freeSpace <= 314572800
         }
 
         @JvmStatic

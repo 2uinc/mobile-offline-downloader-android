@@ -58,9 +58,13 @@ class OfflineManager internal constructor() : CoroutineScope {
     }
 
     fun addOfflineDownloaderCreator(creator: BaseOfflineDownloaderCreator) {
-        if (mOfflineUnsupportedRepository.isUnsupported(creator.getKeyOfflineItem().key)) return
         if (mCreatorList.contains(creator)) return
         mCreatorList.add(creator)
+
+        if (mOfflineUnsupportedRepository.isUnsupported(creator.getKeyOfflineItem().key)) {
+            updateOfflineManagerState()
+            return
+        }
 
         setItemAdded(creator.getKeyOfflineItem().key)
 

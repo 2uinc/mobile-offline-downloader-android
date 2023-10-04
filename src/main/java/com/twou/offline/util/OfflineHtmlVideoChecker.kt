@@ -8,8 +8,10 @@ import com.google.gson.annotations.SerializedName
 import com.twou.offline.Offline
 import com.twou.offline.base.downloader.BaseDownloader
 import com.twou.offline.base.downloader.BaseHtmlOfflineDownloader
+import com.twou.offline.error.OfflineNoSpaceException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -261,13 +263,26 @@ class OfflineHtmlVideoChecker : CoroutineScope {
             } catch (e: Exception) {
                 e.printStackTrace()
 
-                videoLink.previewElement?.replaceWith(videoLink.element)
-                videoLink.error = e
+                delay(4000)
+                if (!Offline.isConnected()) {
+                    mOnVideoProcessListener?.onError(
+                        IllegalStateException("Internet connection must be turned on")
+                    )
 
-                mHandler.post {
+                } else if (BaseOfflineUtils.isThereNoFreeSpace(Offline.getContext())) {
+                    mOnVideoProcessListener?.onError(OfflineNoSpaceException())
+
+                } else if (videoLink.attemptCount < MAX_ATTEMPT_COUNT) {
+                    videoLink.attemptCount++
+
+                } else {
+                    videoLink.previewElement?.replaceWith(videoLink.element)
+                    videoLink.error = e
+
                     mCurrentLinkPosition++
-                    processVideoLinks()
                 }
+
+                mHandler.post { processVideoLinks() }
             }
         }
     }
@@ -581,7 +596,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
 
     open class VideoLink(
         val type: VideoType, var element: Element, var previewElement: Element? = null,
-        var videoHtml: String = "", var error: Exception? = null
+        var videoHtml: String = "", var error: Exception? = null, var attemptCount: Int = 0
     )
 
     // HapYak Data
@@ -654,5 +669,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
     companion object {
 
         const val TAG = "VideoHtmlOfflineDownloader"
+
+        private const val MAX_ATTEMPT_COUNT = 3
     }
 }

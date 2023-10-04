@@ -24,17 +24,14 @@ class DownloadQueueViewModel : ViewModel() {
                 })
             }
         }
-
-        override fun onItemDownloaded(key: String) {
-            onItemRemoved(key)
-        }
     }
 
     init {
         offlineManager.addListener(downloadListener)
     }
 
-    fun onDestroy() {
+    override fun onCleared() {
+        super.onCleared()
         offlineManager.removeListener(downloadListener)
     }
 }
