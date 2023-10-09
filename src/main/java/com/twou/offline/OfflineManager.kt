@@ -66,6 +66,7 @@ class OfflineManager internal constructor() : CoroutineScope {
             return
         }
 
+        logDebugMessage("added new content", creator)
         setItemAdded(creator.getKeyOfflineItem().key)
 
         creator.prepareOfflineDownloader { error ->
@@ -91,6 +92,8 @@ class OfflineManager internal constructor() : CoroutineScope {
 
                 if (creator.offlineQueueItem.queueState == QueueState.PREPARING) {
                     creator.offlineQueueItem.queueState = QueueState.PREPARED
+
+                    logDebugMessage("preparation was success", creator)
                     setItemPrepared(creator.getKeyOfflineItem().key)
                 }
 
@@ -336,6 +339,7 @@ class OfflineManager internal constructor() : CoroutineScope {
             return
         }
 
+        logDebugMessage("item started download", creator)
         setItemStartedDownload(creator.getKeyOfflineItem().key)
 
         creator.createOfflineDownloader { offlineDownloader, error ->
@@ -368,6 +372,7 @@ class OfflineManager internal constructor() : CoroutineScope {
                     saveOfflineModule(offlineModule)
 
                     launch {
+                        logDebugMessage("item was downloaded", creator)
                         setItemDownloaded(creator.getKeyOfflineItem().key)
                         updateOfflineManagerState()
                     }
@@ -402,6 +407,10 @@ class OfflineManager internal constructor() : CoroutineScope {
                     mOfflineLoggerInterceptor?.onLogMessage(
                         creator.getKeyOfflineItem(), OfflineLoggerType.DOWNLOAD_WARNING, message
                     )
+                }
+
+                override fun onDebug(message: String) {
+                    logDebugMessage(message, creator)
                 }
 
             }, object : BaseOfflineDownloader.OnDownloadProgressListener {
@@ -458,6 +467,8 @@ class OfflineManager internal constructor() : CoroutineScope {
 
         mCurrentState = state
 
+        logDebugMessage("OfflineManager new state $state")
+
         launch { mListenerSet.forEach { it.onStateChanged(state) } }
     }
 
@@ -505,6 +516,12 @@ class OfflineManager internal constructor() : CoroutineScope {
 
     private fun setItemResumed(key: String) {
         mListenerSet.forEach { it.onItemResumed(key) }
+    }
+
+    private fun logDebugMessage(message: String, creator: BaseOfflineDownloaderCreator? = null) {
+        mOfflineLoggerInterceptor?.onLogMessage(
+            creator?.getKeyOfflineItem(), OfflineLoggerType.DEBUG, message
+        )
     }
 
     open class OfflineListener : IOfflineListener {
