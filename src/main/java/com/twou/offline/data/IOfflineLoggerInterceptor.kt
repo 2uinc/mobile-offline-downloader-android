@@ -5,5 +5,5 @@ import com.twou.offline.item.KeyOfflineItem
 
 interface IOfflineLoggerInterceptor {
 
-    fun onLogMessage(keyItem: KeyOfflineItem, type: OfflineLoggerType, message: String)
+    fun onLogMessage(keyItem: KeyOfflineItem?, type: OfflineLoggerType, message: String)
 }

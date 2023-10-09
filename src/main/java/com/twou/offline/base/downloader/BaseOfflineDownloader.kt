@@ -136,6 +136,10 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         mOnDownloadListener?.onWarning(message)
     }
 
+    protected fun processDebug(message: String) {
+        mOnDownloadListener?.onDebug(message)
+    }
+
     protected fun downloadAllResources(
         linkQueue: ConcurrentLinkedDeque<ResourceLink>,
         progressStatus: (current: Int, all: Int) -> Unit, onFinished: () -> Unit
@@ -419,6 +423,7 @@ abstract class BaseOfflineDownloader(private val mKeyItem: KeyOfflineItem) : Bas
         fun onDownloaded(offlineModule: OfflineModule)
         fun onError(error: Throwable)
         fun onWarning(message: String)
+        fun onDebug(message: String)
     }
 
     interface OnDownloadProgressListener {
