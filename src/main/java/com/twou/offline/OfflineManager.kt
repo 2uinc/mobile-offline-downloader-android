@@ -160,6 +160,7 @@ class OfflineManager internal constructor() : CoroutineScope {
         }
 
         saveQueue()
+        setPausedAll()
         setNewState(STATE_PAUSED)
     }
 
@@ -176,6 +177,7 @@ class OfflineManager internal constructor() : CoroutineScope {
         }
 
         saveQueue()
+        setResumedAll()
         updateOfflineManagerState()
     }
 
@@ -518,6 +520,14 @@ class OfflineManager internal constructor() : CoroutineScope {
         mListenerSet.forEach { it.onItemResumed(key) }
     }
 
+    private fun setPausedAll() {
+        mListenerSet.forEach { it.onPausedAll() }
+    }
+
+    private fun setResumedAll() {
+        mListenerSet.forEach { it.onResumedAll() }
+    }
+
     private fun logDebugMessage(message: String, creator: BaseOfflineDownloaderCreator? = null) {
         mOfflineLoggerInterceptor?.onLogMessage(
             creator?.getKeyOfflineItem(), OfflineLoggerType.DEBUG, message
@@ -560,6 +570,12 @@ class OfflineManager internal constructor() : CoroutineScope {
 
         override fun onItemResumed(key: String) {
         }
+
+        override fun onPausedAll() {
+        }
+
+        override fun onResumedAll() {
+        }
     }
 
     interface IOfflineListener {
@@ -587,6 +603,10 @@ class OfflineManager internal constructor() : CoroutineScope {
         fun onItemPaused(key: String)
 
         fun onItemResumed(key: String)
+
+        fun onPausedAll()
+
+        fun onResumedAll()
     }
 
     companion object {
