@@ -75,7 +75,8 @@ class OfflineManager internal constructor() : CoroutineScope {
 
             error?.let {
                 mOfflineLoggerInterceptor?.onLogMessage(
-                    creator.getKeyOfflineItem(), OfflineLoggerType.PREPARE, error.message ?: "",
+                    creator.getKeyOfflineItem(), OfflineLoggerType.PREPARE,
+                    "preparation message: " + error.message,
                 )
 
                 if (error is OfflineUnsupportedException) {
@@ -347,7 +348,8 @@ class OfflineManager internal constructor() : CoroutineScope {
         creator.createOfflineDownloader { offlineDownloader, error ->
             error?.let {
                 mOfflineLoggerInterceptor?.onLogMessage(
-                    creator.getKeyOfflineItem(), OfflineLoggerType.PREPARE, error.message ?: ""
+                    creator.getKeyOfflineItem(), OfflineLoggerType.PREPARE,
+                    "creation message: " + error.message
                 )
 
                 creator.setError(it)
