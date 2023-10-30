@@ -31,7 +31,7 @@ class OfflineManager internal constructor() : CoroutineScope {
 
     private var mCurrentState = STATE_IDLE
 
-    private val mListenerSet = mutableSetOf<OfflineListener>()
+    private val mListenerSet = Collections.synchronizedSet(mutableSetOf<OfflineListener>())
 
     override val coroutineContext = Dispatchers.Main
 
