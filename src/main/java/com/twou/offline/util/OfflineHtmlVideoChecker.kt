@@ -71,6 +71,10 @@ class OfflineHtmlVideoChecker : CoroutineScope {
             }
         }
 
+        document.getElementsByClass("wistia_embed").forEach { element ->
+            mVideoLinks.add(VideoLink(VideoType.WISTIA, element))
+        }
+
         replaceAllFoundedVideosWithPreviewDiv()
     }
 
@@ -215,8 +219,9 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                 } else {
                     run job@{
                         element.parents().forEach { parent ->
-                            if (parent.hasClass("video_wrapper") ||
-                                parent.hasClass("wistia_responsive_padding")
+                            if ((parent.hasClass("video_wrapper") ||
+                                        parent.hasClass("wistia_responsive_padding")) &&
+                                parent.hasParent()
                             ) {
                                 workingElement = parent
                                 return@job
