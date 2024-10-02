@@ -13,11 +13,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import okhttp3.FormBody
+import okhttp3.HttpUrl
+import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import java.io.File
 import java.nio.charset.Charset
+
 
 class OfflineHtmlVideoChecker : CoroutineScope {
 
@@ -27,9 +31,14 @@ class OfflineHtmlVideoChecker : CoroutineScope {
     private var mCurrentLinkPosition = 0
     private var mOnVideoProcessListener: OnVideoProcessListener? = null
     private var mDocument: Document? = null
+    private var referer = ""
     private var mResourceSet: Set<String>? = null
 
     override val coroutineContext = Dispatchers.IO
+
+    fun setReferer(referer: String) {
+        this.referer = referer
+    }
 
     fun setResourceSet(resourceSet: Set<String>) {
         mResourceSet = resourceSet
@@ -70,6 +79,8 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                 }
             }
         }
+
+        document.getElementsByClass("lti_button").remove()
 
         document.getElementsByClass("wistia_embed").forEach { element ->
             mVideoLinks.add(VideoLink(VideoType.WISTIA, element))
@@ -263,6 +274,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
                     VideoType.WISTIA -> processWistiaVideo(videoLink)
                     VideoType.VIMEO -> processVimeoVideo(videoLink)
                     VideoType.OBJECTS_IFRAME -> processObjectIframeVideo(videoLink)
+                    VideoType.CANVAS_STUDIO -> processCanvasStudio(videoLink)
                 }
 
             } catch (e: Exception) {
@@ -307,6 +319,8 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         if (link.contains("player.vimeo.com/video")) return VideoType.VIMEO
 
         if (link.contains("media_objects_iframe")) return VideoType.OBJECTS_IFRAME
+
+        if (link.contains("custom_arc_media_id")) return VideoType.CANVAS_STUDIO
         return null
     }
 
@@ -549,6 +563,103 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         }
     }
 
+    private fun processCanvasStudio(videoLink: VideoLink) {
+        var isLinkProcessed = false
+        val link = videoLink.element.attr("src")
+
+        Uri.parse(link).getQueryParameter("url")?.let { url ->
+            Uri.parse(url).getQueryParameter("custom_arc_media_id")?.let { mediaId ->
+                val redirectUrl = retrieveCanvasStudioRedirectUrl(link)
+                val ltiParams = redirectUrl.queryParameter("lti_params") ?: ""
+
+                val host = "https://${redirectUrl.host}"
+
+                val data = mBaseDownloader.downloadFileContent(
+                    "$host/api/lti/launch_params?lti_params=$ltiParams",
+                    mapOf("Referer" to redirectUrl.toString())
+                )
+                val canvasStudio = Gson().fromJson(data, CanvasStudio::class.java)
+
+                val userId = canvasStudio.session.user.id
+                val perspectiveData = mBaseDownloader.downloadFileContent(
+                    "$host/api/media_management/media/$mediaId/lti_perspective?lti_params=$ltiParams",
+                    mapOf(
+                        "Authorization" to "Bearer user_id=\"$userId\", token=\"${canvasStudio.session.token}\"",
+                        "Referer" to redirectUrl.toString(),
+                        "x-lti-params" to ltiParams
+                    )
+                )
+                val canvasStudioPerspective =
+                    Gson().fromJson(perspectiveData, CanvasStudioPerspective::class.java)
+
+                val mediaData = mBaseDownloader.downloadFileContent(
+                    "$host/api/media_management/perspectives/${canvasStudioPerspective.perspectiveId}?include[]=tags&include[]=quiz_session_status",
+                    mapOf(
+                        "Authorization" to "Bearer user_id=\"$userId\", token=\"${canvasStudio.session.token}\"",
+                        "Referer" to redirectUrl.toString(),
+                        "x-lti-params" to ltiParams
+                    )
+                )
+                val canvasStudioMedia =
+                    Gson().fromJson(mediaData, CanvasStudioMedia::class.java)
+                val mediaSources = canvasStudioMedia.perspective.media.sources
+                val mediaSource = mediaSources.firstOrNull { it.definition == "low" }
+                    ?: mediaSources.firstOrNull { it.definition == "standard" }
+                    ?: mediaSources.firstOrNull { it.definition == "high" } ?: mediaSources.first()
+                val mediaCaptionUrl =
+                    canvasStudioMedia.perspective.media.captions
+                        .firstOrNull { it.srcLang == "en" && it.subtitleFormat.contains("vtt") }
+                        ?.url ?: ""
+
+                if (mediaSource.mimeType.contains("vimeo")) {
+                    val vimeoHtml = mBaseDownloader.downloadFileContent(
+                        mediaSource.url, mapOf("Referer" to Offline.getBaseUrl())
+                    )
+                    val firstSub = vimeoHtml.substringAfter("embedUrl\":\"")
+                    val embedUrl = firstSub.substringBefore("\"")
+                    processVimeoVideo(videoLink, embedUrl)
+                    isLinkProcessed = true
+                } else if (mediaSource.mimeType.contains("video/mp4")) {
+                    val captionUrl =
+                        if (mediaCaptionUrl.isNotEmpty() && mediaCaptionUrl.startsWith("/"))
+                            host + mediaCaptionUrl else mediaCaptionUrl
+                    replaceVideoElement(mediaSource.url, captionUrl)
+                }
+            }
+        }
+
+        if (!isLinkProcessed) {
+            mHandler.post {
+                mCurrentLinkPosition++
+                processVideoLinks()
+            }
+        }
+    }
+
+    private fun retrieveCanvasStudioRedirectUrl(link: String): HttpUrl {
+        val html = mBaseDownloader.downloadFileContent(
+            link, mapOf("Referer" to referer)
+        )
+
+        val document = Jsoup.parse(html)
+        val form = document.getElementsByTag("form").first()
+        val formAction = form.attr("action")
+
+        val client = Offline.getClient()
+
+        val formBodyBuilder = FormBody.Builder()
+        form.getElementsByTag("input").forEach { input ->
+            formBodyBuilder.add(input.attr("name"), input.attr("value"))
+        }
+        val formBody = formBodyBuilder.build()
+        val requestBuilder = Request.Builder().url(formAction)
+            .post(formBody)
+        val call = client.newCall(requestBuilder.build())
+        val response = call.execute()
+
+        return response.request.url
+    }
+
     private fun replaceVideoElement(url: String, subtitleUrl: String = "") {
         val videoDiv = getVideoHtml("$mCurrentLinkPosition", url, subtitleUrl)
         val videoElement = Jsoup.parse(videoDiv)
@@ -597,7 +708,7 @@ class OfflineHtmlVideoChecker : CoroutineScope {
         getCurrentVideoLink().videoHtml = errorDiv
     }
 
-    enum class VideoType { HAP_YAK, FROST, WISTIA, VIMEO, OBJECTS_IFRAME }
+    enum class VideoType { HAP_YAK, FROST, WISTIA, VIMEO, OBJECTS_IFRAME, CANVAS_STUDIO }
 
     open class VideoLink(
         val type: VideoType, var element: Element, var previewElement: Element? = null,
@@ -662,6 +773,34 @@ class OfflineHtmlVideoChecker : CoroutineScope {
 
     data class MediaSource(
         val size: String, val url: String, @SerializedName("content_type") val contentType: String
+    )
+
+    data class CanvasStudio(val session: CanvasStudioSession)
+
+    data class CanvasStudioSession(val token: String, val user: CanvasStudioSessionUser)
+
+    data class CanvasStudioSessionUser(val id: Long)
+
+    data class CanvasStudioPerspective(@SerializedName("perspective_id") val perspectiveId: String)
+
+    data class CanvasStudioMedia(val perspective: CanvasStudioMediaPerspective)
+
+    data class CanvasStudioMediaPerspective(val media: CanvasStudioMediaMedia)
+
+    data class CanvasStudioMediaMedia(
+        val sources: List<CanvasStudioMediaSource>,
+        val captions: List<CanvasStudioMediaCaption>
+    )
+
+    data class CanvasStudioMediaSource(
+        @SerializedName("mime_type") val mimeType: String,
+        val url: String, val definition: String
+    )
+
+    data class CanvasStudioMediaCaption(
+        @SerializedName("srclang") val srcLang: String,
+        @SerializedName("subtitle_format") val subtitleFormat: String,
+        val url: String
     )
 
     open class OnVideoProcessListener {

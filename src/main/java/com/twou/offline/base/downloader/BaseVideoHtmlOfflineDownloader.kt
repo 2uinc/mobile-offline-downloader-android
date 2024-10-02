@@ -14,9 +14,10 @@ abstract class BaseVideoHtmlOfflineDownloader(keyItem: KeyOfflineItem) :
 
     protected fun getAllVideosAndDownload(
         document: Document, l: OfflineHtmlVideoChecker.OnVideoProcessListener,
-        contentUrl: String = "", isNeedReplaceIframes: Boolean = true
+        contentUrl: String = "", isNeedReplaceIframes: Boolean = true, referer: String = ""
     ) {
         OfflineHtmlVideoChecker().apply {
+            setReferer(referer)
             setResourceSet(resourceSet)
             setup(document, object : OfflineHtmlVideoChecker.OnVideoProcessListener() {
                 override fun onVideoLinksReplaced() {
