@@ -207,8 +207,8 @@ class Offline private constructor(
             instance = builder?.build(context.applicationContext)
                 ?: Builder().build(context.applicationContext)
             mCreatorUnit = creatorUnit
-            mOfflineManager = OfflineManager()
             Paper.init(context)
+            mOfflineManager = OfflineManager()
         }
 
         fun getOfflineRepository(): IOfflineRepository {
