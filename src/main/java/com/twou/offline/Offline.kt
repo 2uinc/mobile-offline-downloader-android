@@ -19,6 +19,7 @@ import com.twou.offline.data.IOfflineUnsupportedRepository
 import com.twou.offline.item.OfflineQueueItem
 import com.twou.offline.util.BaseOfflineUtils
 import com.twou.offline.util.OfflineConst
+import io.paperdb.Paper
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -206,6 +207,7 @@ class Offline private constructor(
             instance = builder?.build(context.applicationContext)
                 ?: Builder().build(context.applicationContext)
             mCreatorUnit = creatorUnit
+            Paper.init(context)
             mOfflineManager = OfflineManager()
         }
 
